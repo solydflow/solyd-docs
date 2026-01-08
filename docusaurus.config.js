@@ -13,6 +13,7 @@ const config = {
   title: 'SolydFlow Docs',
   tagline: 'Revenue Infrastructure for Africa',
   favicon: 'img/favicon.ico',
+  trailingSlash: false,
 
   // Future flags, see https://docusaurus.io/docs/api/docusaurus-config#future
   future: {
