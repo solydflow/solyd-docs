@@ -1,1 +1,0 @@
-"use strict";(globalThis.webpackChunksolyd_docs=globalThis.webpackChunksolyd_docs||[]).push([[903],{1912(s){s.exports=JSON.parse('{"blogBasePath":"/solyd-docs/blog","blogTitle":"Blog","authorsListPath":"/solyd-docs/blog/authors"}')}}]);
