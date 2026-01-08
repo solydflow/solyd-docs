@@ -1,1 +1,0 @@
-# solyd-docs
