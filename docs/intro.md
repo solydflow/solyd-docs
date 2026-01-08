@@ -11,7 +11,7 @@ Our current implementation are Paystack and Flutterwave, while others are in pro
 
 ---
 
-### N.B: The docs is undergoing improvement, and more visuals will be added soon for better exoerience, please bear with us.
+> N.B: The docs is undergoing improvement, and more visuals will be added soon for better exoerience, please bear with us.
 
 ## Step 1: Configure the Dashboard
 
