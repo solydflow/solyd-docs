@@ -75,8 +75,31 @@ void main() async {
 }
 ```
 
-### 2. Checking Access (The Gatekeeper)
-You can check if a user has access anywhere in your app. This checks the local encrypted cache first, making it **instant and offline-safe**.
+### 2. Getting Full User Status (Offline-First)
+To get the complete status of a user (including expiry dates and multiple entitlements), use `getCustomerInfo`. 
+
+This method checks the **encrypted local cache** first. If data exists, it returns instantly (allowing offline access) and syncs with the server in the background.
+
+```dart
+Future<void> printStatus() async {
+  // 🚀 Returns instantly from cache if available
+  CustomerInfo info = await SolydFlow.getCustomerInfo();
+
+  // Check specific entitlement
+  if (info.activeEntitlements['gold_access'] == true) {
+    print("User is Gold");
+  }
+
+  // Get exact expiry date
+  DateTime? expiry = info.allEntitlements['gold_access'];
+  if (expiry != null) {
+    print("Expires on: $expiry");
+  }
+}
+```
+
+### 3. Checking Access (The Helper)
+For a simple check, you can use the helper method. This also utilizes the local cache.
 
 ```dart
 Future<void> checkAccess() async {
@@ -91,7 +114,7 @@ Future<void> checkAccess() async {
 }
 ```
 
-### 3. Showing the Paywall
+### 4. Showing the Paywall
 Don't hardcode prices. Fetch them from SolydFlow so you can change prices remotely.
 
 ```dart
@@ -105,19 +128,21 @@ for (var pkg in offerings) {
 }
 ```
 
-### 4. Making a Purchase
+### 5. Making a Purchase
 When the user taps "Buy", call this method. It handles the Payment UI, Verification, and Error handling.
 
 ```dart
 Future<void> buyPlan(BuildContext context, String packageID) async {
   try {
     // 1. Trigger Purchase (Opens WebView)
+    // Returns the updated CustomerInfo immediately upon success
     final CustomerInfo? info = await SolydFlow.purchasePackage(context, packageID);
 
-    if (info == null) return;
+    if (info == null) return; // User cancelled or failed
 
     // 2. Check Status Immediately
-    if (await SolydFlow.hasEntitlement("gold_access")) {
+    // The info object contains the new entitlements from the server
+    if (info.activeEntitlements["gold_access"] == true) {
       Navigator.pop(context); // Close Paywall
       print("Welcome to the Gold Club!");
     }
@@ -139,7 +164,7 @@ SolydFlow is built for unstable networks. Test the recovery engine:
 3.  **Immediately kill the app** (swipe it away) before it returns to the success screen.
 4.  Wait 30 seconds.
 5.  Re-open the app.
-6.  The user will automatically have `gold_access`.
+6.  The user will automatically have `gold_access` (restored via Webhook/Cache sync).
 
 ---
 
