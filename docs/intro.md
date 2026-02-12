@@ -47,7 +47,7 @@ dependencies:
     git:
       url: https://github.com/solydflow/solydflow_flutter.git
       path: sdk_flutter
-      ref: v0.5.0
+      ref: main
 ```
 
 **Android Requirement:**
