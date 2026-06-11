@@ -75,6 +75,30 @@ void main() async {
 }
 ```
 
+## Choose Your Integration Strategy
+
+SolydFlow gives your product and design teams maximum flexibility. Our SDK includes two distinct ways to present payments to your users:
+
+### Option A: Custom Native UI (Code-First)
+If your design team has highly specific, custom brand guidelines and you want to write your own Flutter widgets:
+*   Fetch the pricing data dynamically using `SolydFlow.getOfferings()`.
+*   Render your own layout (e.g. customized list cards).
+*   Trigger the payment sheet via `SolydFlow.purchasePackage(context, "package_id")`.
+
+### Option B: No-Code Remote UI (Dashboard-First)
+If you want to design, modify, and publish paywalls live from your dashboard without releasing a new app version:
+*   Design your paywall visual elements in the **SolydFlow Console**.
+*   Trigger the automatic UI sheet with one line of code:
+
+```dart
+showModalBottomSheet(
+  context: context,
+  isScrollControlled: true,
+  builder: (ctx) => SolydPaywall(
+    onPurchaseSuccess: (customerInfo) => unlockApp(),
+  ),
+);
+
 ### 2. Checking Access (The Gatekeeper)
 You can check if a user has access anywhere in your app. This checks the local encrypted cache first, making it **instant and offline-safe**.
 
