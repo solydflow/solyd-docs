@@ -533,7 +533,7 @@ Future<void> checkAccess() async {
 
 ### Why use this method?
 
-* Fast (<5ms)
+* Fast ( < 5ms )
 * Works offline using encrypted local cache
 * Ideal for UI gating and navigation decisions
 
