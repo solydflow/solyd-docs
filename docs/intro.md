@@ -1,12 +1,10 @@
-# Quick Start Guide
-
 # Quick Start Integration Guide
 
 > N.B: The documentation is still undergoing standardization, please report any issues you had while following the guide.
 
 SolydFlow is the revenue infrastructure for African mobile apps.
 
-It unifies app stores (Apple App Store and Google Play) and local payment gateways (Paystack, Flutterwave, and Stripe) into a single API, allowing you to manage subscriptions, purchases, and customer access from one place.
+It unifies app stores (Apple App Store and Google Play), local African payment gateways (Paystack and Flutterwave), and Stripe for global users outside local markets into a single API, allowing you to manage subscriptions, purchases, and customer access from one place.
 
 Built for the realities of emerging markets, SolydFlow provides:
 
@@ -847,6 +845,199 @@ Recovery timing depends on:
 * Application reconnect timing
 
 In most cases, recovery should occur automatically within a short period after the payment provider confirms the transaction.
+
+---
+
+# Web Integration (JavaScript & TypeScript)
+
+SolydFlow provides a lightweight, framework-agnostic JavaScript SDK for web applications (React, Vue, Next.js, or Vanilla JS).
+
+The JavaScript SDK provides the same core capabilities available on mobile, including:
+
+* Dynamic pricing
+* Purchasing Power Parity (PPP)
+* Smart Upgrade Credits
+* Entitlement management
+* Subscription lifecycle tracking
+
+It allows you to use the same pricing logic, entitlement system, and upgrade rules as your mobile applications while maintaining a separate web checkout flow.
+This allows customers to purchase and manage subscriptions from your website while maintaining a single source of truth across platforms.
+
+## Mobile vs Web Purchase Flow
+
+The purchase experience differs slightly between mobile and web platforms.
+
+### Mobile SDK
+
+```text
+User
+ ↓
+In-App Purchase Flow
+ ↓
+Payment Completed
+ ↓
+CustomerInfo Returned
+ ↓
+Entitlement Activated
+```
+
+The SDK waits for the purchase flow to complete and returns an updated `CustomerInfo` object immediately.
+
+### Web SDK
+
+```text
+User
+ ↓
+Hosted Checkout Page
+ ↓
+Payment Completed
+ ↓
+Webhook Sent
+ ↓
+Backend Updated
+ ↓
+Entitlement Activated
+```
+
+Because the browser is redirected to a hosted checkout page, the web application cannot wait for payment completion.
+
+Instead, SolydFlow notifies your backend using webhooks after the transaction has been verified.
+
+
+---
+
+## 1. Installation
+
+Install directly from GitHub:
+
+```bash id="n3kq9v"
+npm install git+https://github.com/solydflow/solydflow-js.git
+```
+
+or:
+
+```bash id="d9x2kq"
+yarn add git+https://github.com/solydflow/solydflow-js.git
+```
+
+---
+
+## 2. Initialization
+
+Initialize the SDK as early as possible in your web application.
+
+```javascript id="p2x8la"
+import { SolydFlow } from "solydflow-js";
+
+await SolydFlow.configure(
+  "sf_pk_live_YOUR_PUBLIC_KEY",
+  "user_12345"
+);
+```
+
+---
+
+## 3. Checking Access
+
+Check whether the current user has an active entitlement.
+
+```javascript id="c8v1mz"
+async function checkAccess() {
+  const isGold = await SolydFlow.hasEntitlement("gold_access");
+
+  if (isGold) {
+    console.log("Welcome to the premium dashboard!");
+  } else {
+    // Redirect to pricing page
+  }
+}
+```
+
+---
+
+## 4. Fetching Dynamic Pricing
+
+Fetch packages configured in your SolydFlow dashboard.
+
+SolydFlow automatically applies:
+
+* Purchasing Power Parity (Geo-IP pricing)
+* Smart Upgrade Credits
+* User-based pricing rules
+
+```javascript id="k1q9dp"
+async function renderPaywall() {
+  const offerings = await SolydFlow.getOfferings();
+
+  offerings.forEach(pkg => {
+    if (pkg.is_upgrade) {
+      console.log(
+        `Upgrade for ${pkg.currency} ${pkg.calculated_amount_kobo / 100}`
+      );
+    } else {
+      console.log(
+        `Standard Price: ${pkg.currency} ${pkg.amount_kobo / 100}`
+      );
+    }
+  });
+}
+```
+
+---
+
+## 5. Making a Purchase (Web Redirect Flow)
+
+When a user initiates a purchase, they are redirected to a secure hosted checkout page.
+
+> ⚠️ Web Flow Difference:
+> Unlike the mobile SDK (which returns `CustomerInfo` directly), the web SDK redirects the user to a hosted payment page. Your application does not wait for completion.
+
+```javascript id="m8v2kc"
+async function handleCheckout(packageId) {
+  try {
+    await SolydFlow.purchasePackage(
+      packageId,
+      "2348012345678"
+    );
+
+    // Redirect occurs automatically.
+    // Code below will not execute immediately.
+  } catch (error) {
+    console.error("Checkout failed:", error.message);
+  }
+}
+```
+
+---
+
+## 6. Handling Completed Purchases (Webhooks)
+
+Because web applications cannot directly observe payment completion, SolydFlow uses backend webhooks.
+
+### Setup Steps
+
+1. Go to SolydFlow Console → Projects
+2. Open your project settings
+3. Locate **Webhook Configuration**
+4. Add your backend endpoint (e.g. Node.js, Supabase, or serverless function)
+
+---
+
+### Webhook Event Flow
+
+When a payment is completed:
+
+```text id="q8w1zp"
+Customer → Checkout → Payment Provider → SolydFlow → Webhook → Your Backend
+```
+
+SolydFlow sends a `subscription_renewed` event to your backend.
+
+Your backend should then:
+
+* Validate the event
+* Update user subscription state
+* Activate entitlements in your database
 
 ---
 
