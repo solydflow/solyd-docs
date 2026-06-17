@@ -5,7 +5,7 @@
 <meta name="generator" content="Docusaurus v3.9.2">
 <title data-rh="true">Quick Start Integration Guide | SolydFlow Docs</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:image" content="https://docs.solydflow.com/img/docusaurus-social-card.jpg"><meta data-rh="true" name="twitter:image" content="https://docs.solydflow.com/img/docusaurus-social-card.jpg"><meta data-rh="true" property="og:url" content="https://docs.solydflow.com/docs/intro"><meta data-rh="true" property="og:locale" content="en"><meta data-rh="true" name="docusaurus_locale" content="en"><meta data-rh="true" name="docsearch:language" content="en"><meta data-rh="true" name="docusaurus_version" content="current"><meta data-rh="true" name="docusaurus_tag" content="docs-default-current"><meta data-rh="true" name="docsearch:version" content="current"><meta data-rh="true" name="docsearch:docusaurus_tag" content="docs-default-current"><meta data-rh="true" property="og:title" content="Quick Start Integration Guide | SolydFlow Docs"><meta data-rh="true" name="description" content="N.B: The documentation is still undergoing standardization, please report any issues you had while following the guide."><meta data-rh="true" property="og:description" content="N.B: The documentation is still undergoing standardization, please report any issues you had while following the guide."><link data-rh="true" rel="icon" href="/img/favicon.ico"><link data-rh="true" rel="canonical" href="https://docs.solydflow.com/docs/intro"><link data-rh="true" rel="alternate" href="https://docs.solydflow.com/docs/intro" hreflang="en"><link data-rh="true" rel="alternate" href="https://docs.solydflow.com/docs/intro" hreflang="x-default"><script data-rh="true" type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Quick Start Integration Guide","item":"https://docs.solydflow.com/docs/intro"}]}</script><link rel="alternate" type="application/rss+xml" href="/blog/rss.xml" title="SolydFlow Docs RSS Feed">
 <link rel="alternate" type="application/atom+xml" href="/blog/atom.xml" title="SolydFlow Docs Atom Feed"><link rel="stylesheet" href="/assets/css/styles.761b036b.css">
-<script src="/assets/js/runtime~main.919ea1f9.js" defer="defer"></script>
+<script src="/assets/js/runtime~main.42af90fc.js" defer="defer"></script>
 <script src="/assets/js/main.2ce6eb90.js" defer="defer"></script>
 </head>
 <body class="navigation-with-keyboard">
@@ -17,7 +17,8 @@
 <p>N.B: The documentation is still undergoing standardization, please report any issues you had while following the guide.</p>
 </blockquote>
 <p>SolydFlow is the revenue infrastructure for African mobile apps.</p>
-<p>It unifies app stores (Apple App Store and Google Play), local African payment gateways (Paystack and Flutterwave), and Stripe for global users outside local markets into a single API, allowing you to manage subscriptions, purchases, and customer access from one place.</p>
+<p>It unifies app stores (Apple App Store and Google Play), local African payment gateways (Paystack and Flutterwave), and Stripe for global coverage and portability into a single API.</p>
+<p>Beyond payment aggregation, SolydFlow includes Smart Payment Routing, allowing transactions to be automatically routed to the payment rail most likely to succeed based on the customer&#x27;s region, currency, and available payment methods.</p>
 <p>Built for the realities of emerging markets, SolydFlow provides:</p>
 <ul>
 <li class="">Offline entitlement access, so users can continue accessing paid features even when connectivity is unstable.</li>
@@ -46,6 +47,17 @@
 <p>Although the customer purchased different packages, both unlock the same entitlement (<code>gold_access</code>).</p>
 <p>This allows you to manage access consistently regardless of billing period, currency, or payment provider.</p>
 <hr>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="smart-payment-routing">Smart Payment Routing<a href="#smart-payment-routing" class="hash-link" aria-label="Direct link to Smart Payment Routing" title="Direct link to Smart Payment Routing" translate="no">​</a></h2>
+<p>SolydFlow can automatically route payments to the most appropriate payment provider based on currency, geography, and configured routing rules.</p>
+<p>This helps improve conversion rates by reducing failed card transactions and directing users to payment methods that are commonly used in their region.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="example-routing-flow">Example Routing Flow<a href="#example-routing-flow" class="hash-link" aria-label="Direct link to Example Routing Flow" title="Direct link to Example Routing Flow" translate="no">​</a></h3>
+<div class="language-text codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-text codeBlock_bY9V thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_e6Vv"><span class="token-line" style="color:#393A34"><span class="token plain">Customer (NGN)</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">        ↓</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">SolydFlow Smart Router</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">        ↓</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">Monnify Virtual Account</span><br></span></code></pre></div></div>
+<div class="language-text codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-text codeBlock_bY9V thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_e6Vv"><span class="token-line" style="color:#393A34"><span class="token plain">Customer (KES)</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">        ↓</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">SolydFlow Smart Router</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">        ↓</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">M-Pesa STK Push</span><br></span></code></pre></div></div>
+<div class="language-text codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-text codeBlock_bY9V thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_e6Vv"><span class="token-line" style="color:#393A34"><span class="token plain">Customer (USD)</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">        ↓</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">SolydFlow Smart Router</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">        ↓</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">Stripe</span><br></span></code></pre></div></div>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="supported-payment-rails">Supported Payment Rails<a href="#supported-payment-rails" class="hash-link" aria-label="Direct link to Supported Payment Rails" title="Direct link to Supported Payment Rails" translate="no">​</a></h3>
+<table><thead><tr><th>Payment Rail</th><th>Best For</th></tr></thead><tbody><tr><td>Paystack</td><td>General African card payments</td></tr><tr><td>Flutterwave</td><td>General African card payments</td></tr><tr><td>Monnify</td><td>Nigerian virtual accounts</td></tr><tr><td>M-Pesa / Daraja</td><td>Kenyan mobile money payments</td></tr><tr><td>Stripe</td><td>Global card payments</td></tr></tbody></table>
+<p>Routing rules are configured from the SolydFlow Console and require no application code changes.</p>
+<hr>
 <h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="prerequisites">Prerequisites<a href="#prerequisites" class="hash-link" aria-label="Direct link to Prerequisites" title="Direct link to Prerequisites" translate="no">​</a></h2>
 <ul>
 <li class="">A <a href="https://console.solydflow.com" target="_blank" rel="noopener noreferrer" class="">SolydFlow Account</a></li>
@@ -68,8 +80,17 @@
 </blockquote>
 <hr>
 <h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="2-connect-your-payment-providers">2. Connect Your Payment Providers<a href="#2-connect-your-payment-providers" class="hash-link" aria-label="Direct link to 2. Connect Your Payment Providers" title="Direct link to 2. Connect Your Payment Providers" translate="no">​</a></h3>
-<p>SolydFlow follows a Bring Your Own Gateway (BYOK) model.</p>
-<p>Navigate to <strong>Project Settings → Connect Gateway</strong> and connect the payment providers you want to use.</p>
+<p>SolydFlow follows a secure <strong>Bring Your Own Keys (BYOK)</strong> model. This ensures you maintain direct ownership of your merchant accounts, payouts, and compliance, while SolydFlow orchestrates the intelligence and routing.</p>
+<p>Navigate to <strong>SolydFlow Console → Projects → Configuration (Settings Icon)</strong> to access your <strong>API Credentials Vault</strong> and connect the payment providers you want to use.</p>
+<p>Depending on your target markets, configure the following providers:</p>
+<ul>
+<li class=""><strong><a href="#paystack-integration" class="">Connecting Paystack (Pan-African Cards)</a></strong></li>
+<li class=""><strong><a href="#flutterwave-integration" class="">Connecting Flutterwave (Pan-African Cards)</a></strong></li>
+<li class=""><strong><a href="#stripe-integration" class="">Connecting Stripe (Global Cards)</a></strong></li>
+<li class=""><strong><a href="#" class="">Connecting Monnify (Nigerian Virtual Accounts) - coming soon</a></strong></li>
+<li class=""><strong><a href="#" class="">Connecting M-Pesa / Daraja (Kenyan Mobile Money)</a></strong></li>
+</ul>
+<p><em>(Click any provider above to view their specific key and webhook setup guide).</em></p>
 <blockquote>
 <p><strong>Production-ready providers</strong></p>
 <ul>
@@ -83,7 +104,7 @@
 <li class="">Stripe</li>
 </ul>
 </blockquote>
-<p>For each provider:</p>
+<p>Overview for each provider:</p>
 <ol>
 <li class="">Paste your provider&#x27;s Secret Key.</li>
 <li class="">Save the configuration.</li>
@@ -98,6 +119,194 @@
 <li class="">Restoration of interrupted purchases</li>
 </ul>
 <hr>
+<div id="paystack-integration"></div>
+<h1>Connecting Paystack to SolydFlow</h1>
+<p>Connect your Paystack account to enable payment monitoring, transaction recovery, and financial consensus across your revenue infrastructure.</p>
+<p>By integrating Paystack, SolydFlow&#x27;s <strong>Consensus Engine</strong>, <strong>Sweeper</strong>, and <strong>Immutable Ledger</strong> continuously monitor transaction states and eliminate revenue uncertainty.</p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="prerequisites-1">Prerequisites<a href="#prerequisites-1" class="hash-link" aria-label="Direct link to Prerequisites" title="Direct link to Prerequisites" translate="no">​</a></h2>
+<ul>
+<li class="">An active Paystack account (Live or Test mode).</li>
+<li class="">A SolydFlow project.</li>
+</ul>
+<hr>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="step-1-add-your-paystack-secret-keys-to-solydflow">Step 1: Add Your Paystack Secret Keys to SolydFlow<a href="#step-1-add-your-paystack-secret-keys-to-solydflow" class="hash-link" aria-label="Direct link to Step 1: Add Your Paystack Secret Keys to SolydFlow" title="Direct link to Step 1: Add Your Paystack Secret Keys to SolydFlow" translate="no">​</a></h2>
+<p>SolydFlow requires your Paystack Secret Keys to initialize payments and independently verify transaction states directly from Paystack&#x27;s API.</p>
+<ol>
+<li class="">Log in to your Paystack Dashboard.</li>
+<li class="">Navigate to <strong>Settings → API Keys &amp; Webhooks</strong>.</li>
+<li class="">Copy your <strong>Secret Key</strong> (<code>sk_live_...</code> and <code>sk_test_...</code>).</li>
+<li class="">Log in to the SolydFlow Console.</li>
+<li class="">Open your Project settings.</li>
+<li class="">Navigate to <strong>API Credentials Vault</strong>.</li>
+<li class="">Paste your Paystack Secret Keys into the Paystack section.</li>
+<li class="">Click <strong>Save Configuration</strong>.</li>
+</ol>
+<blockquote>
+<p><strong>Security Note:</strong> All gateway credentials are encrypted using AES-256-GCM and are never exposed to client applications.</p>
+</blockquote>
+<hr>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="step-2-configure-the-inbound-webhook">Step 2: Configure the Inbound Webhook<a href="#step-2-configure-the-inbound-webhook" class="hash-link" aria-label="Direct link to Step 2: Configure the Inbound Webhook" title="Direct link to Step 2: Configure the Inbound Webhook" translate="no">​</a></h2>
+<p>Paystack must notify SolydFlow when payment activity occurs.</p>
+<ol>
+<li class="">In the SolydFlow Console, open <strong>Inbound Gateway Webhook Configurations</strong>.</li>
+<li class="">Copy your Paystack Webhook URL:</li>
+</ol>
+<div class="language-text codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-text codeBlock_bY9V thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_e6Vv"><span class="token-line" style="color:#393A34"><span class="token plain">https://api.solydflow.com/api/v1/webhook/paystack/{your_solydflow_api_key}</span><br></span></code></pre></div></div>
+<ol start="3">
+<li class="">Log in to Paystack.</li>
+<li class="">Navigate to <strong>Settings → API Keys &amp; Webhooks</strong>.</li>
+<li class="">Paste the SolydFlow URL into the Webhook URL field.</li>
+<li class="">Save your configuration.</li>
+</ol>
+<hr>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="how-solydflow-secures-paystack-events">How SolydFlow Secures Paystack Events<a href="#how-solydflow-secures-paystack-events" class="hash-link" aria-label="Direct link to How SolydFlow Secures Paystack Events" title="Direct link to How SolydFlow Secures Paystack Events" translate="no">​</a></h2>
+<p>SolydFlow never grants access based solely on a webhook payload.</p>
+<p>When Paystack sends an event:</p>
+<ol>
+<li class="">SolydFlow intercepts the webhook.</li>
+<li class="">The Consensus Engine pauses entitlement activation.</li>
+<li class="">SolydFlow securely queries Paystack&#x27;s Verify Transaction API using your encrypted Secret Key.</li>
+<li class="">The returned transaction state is compared against the webhook payload.</li>
+<li class="">If both states agree, SolydFlow records a <code>SETTLED_CONSENSUS</code> event in the Immutable Ledger.</li>
+<li class="">Access is granted.</li>
+</ol>
+<p>This prevents:</p>
+<ul>
+<li class="">Webhook spoofing</li>
+<li class="">Replay attacks</li>
+<li class="">State manipulation</li>
+<li class="">False payment confirmations</li>
+</ul>
+<hr>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="what-solydflow-monitors">What SolydFlow Monitors<a href="#what-solydflow-monitors" class="hash-link" aria-label="Direct link to What SolydFlow Monitors" title="Direct link to What SolydFlow Monitors" translate="no">​</a></h2>
+<p>Once connected, SolydFlow continuously tracks:</p>
+<ul>
+<li class="">Successful transactions</li>
+<li class="">Delayed callbacks</li>
+<li class="">Missing webhooks</li>
+<li class="">Abandoned checkouts</li>
+<li class="">Zombie transactions</li>
+<li class="">State mismatches</li>
+</ul>
+<p>These signals power Recover, Truth, and Enforce across your payment infrastructure.</p>
+<hr>
+<div id="flutterwave-integration"></div>
+<h1>Connecting Flutterwave to SolydFlow</h1>
+<p>Connect your Flutterwave account to enable transaction recovery, payment verification, and financial consensus across your revenue stack.</p>
+<p>By integrating Flutterwave, SolydFlow&#x27;s <strong>Consensus Engine</strong> continuously verifies transaction states before access is granted to customers.</p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="prerequisites-2">Prerequisites<a href="#prerequisites-2" class="hash-link" aria-label="Direct link to Prerequisites" title="Direct link to Prerequisites" translate="no">​</a></h2>
+<ul>
+<li class="">An active Flutterwave account (Live or Test mode).</li>
+<li class="">A SolydFlow project.</li>
+</ul>
+<hr>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="step-1-add-your-flutterwave-secret-keys-to-solydflow">Step 1: Add Your Flutterwave Secret Keys to SolydFlow<a href="#step-1-add-your-flutterwave-secret-keys-to-solydflow" class="hash-link" aria-label="Direct link to Step 1: Add Your Flutterwave Secret Keys to SolydFlow" title="Direct link to Step 1: Add Your Flutterwave Secret Keys to SolydFlow" translate="no">​</a></h2>
+<p>SolydFlow requires your Flutterwave Secret Keys to independently verify transactions and eliminate trust in client-side responses.</p>
+<ol>
+<li class="">Log in to your Flutterwave Dashboard.</li>
+<li class="">Navigate to <strong>Settings → API Keys</strong>.</li>
+<li class="">Copy your Secret Key (<code>FLWSECK_TEST...</code> and <code>FLWSECK_LIVE...</code>).</li>
+<li class="">Log in to the SolydFlow Console.</li>
+<li class="">Open your Project settings.</li>
+<li class="">Navigate to <strong>API Credentials Vault</strong>.</li>
+<li class="">Paste your Flutterwave Secret Keys into the Flutterwave section.</li>
+<li class="">Click <strong>Save Configuration</strong>.</li>
+</ol>
+<blockquote>
+<p><strong>Security Note:</strong> SolydFlow encrypts all gateway credentials using AES-256-GCM before storage.</p>
+</blockquote>
+<hr>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="step-2-configure-the-inbound-webhook-1">Step 2: Configure the Inbound Webhook<a href="#step-2-configure-the-inbound-webhook-1" class="hash-link" aria-label="Direct link to Step 2: Configure the Inbound Webhook" title="Direct link to Step 2: Configure the Inbound Webhook" translate="no">​</a></h2>
+<p>Flutterwave must notify SolydFlow whenever transaction activity occurs.</p>
+<ol>
+<li class="">In the SolydFlow Console, open <strong>Inbound Gateway Webhook Configurations</strong>.</li>
+<li class="">Copy your Flutterwave Webhook URL:</li>
+</ol>
+<div class="language-text codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-text codeBlock_bY9V thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_e6Vv"><span class="token-line" style="color:#393A34"><span class="token plain">https://api.solydflow.com/api/v1/webhook/flutterwave/{your_solydflow_api_key}</span><br></span></code></pre></div></div>
+<ol start="3">
+<li class="">Log in to Flutterwave.</li>
+<li class="">Navigate to <strong>Settings → Webhooks</strong>.</li>
+<li class="">Paste the SolydFlow URL.</li>
+<li class="">Save your webhook configuration.</li>
+</ol>
+<hr>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="how-solydflow-secures-flutterwave-events">How SolydFlow Secures Flutterwave Events<a href="#how-solydflow-secures-flutterwave-events" class="hash-link" aria-label="Direct link to How SolydFlow Secures Flutterwave Events" title="Direct link to How SolydFlow Secures Flutterwave Events" translate="no">​</a></h2>
+<p>Unlike traditional integrations, SolydFlow does not blindly trust incoming webhooks.</p>
+<p>When Flutterwave sends a payment event:</p>
+<ol>
+<li class="">SolydFlow receives the webhook.</li>
+<li class="">The Consensus Engine pauses entitlement activation.</li>
+<li class="">SolydFlow queries Flutterwave&#x27;s transaction verification API using your encrypted Secret Key.</li>
+<li class="">The API response is compared against the webhook payload.</li>
+<li class="">If consensus is reached, a <code>SETTLED_CONSENSUS</code> record is written to the Immutable Ledger.</li>
+<li class="">User access is activated.</li>
+</ol>
+<p>This guarantees financial truth even when:</p>
+<ul>
+<li class="">Webhooks arrive late</li>
+<li class="">Duplicate events are received</li>
+<li class="">Client responses are manipulated</li>
+<li class="">Network interruptions occur</li>
+</ul>
+<hr>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="what-solydflow-monitors-1">What SolydFlow Monitors<a href="#what-solydflow-monitors-1" class="hash-link" aria-label="Direct link to What SolydFlow Monitors" title="Direct link to What SolydFlow Monitors" translate="no">​</a></h2>
+<p>After connection, SolydFlow actively monitors:</p>
+<ul>
+<li class="">Successful payments</li>
+<li class="">Pending transactions</li>
+<li class="">Failed callbacks</li>
+<li class="">Missing webhooks</li>
+<li class="">Delayed settlements</li>
+<li class="">Zombie transactions</li>
+<li class="">Ledger conflicts</li>
+</ul>
+<p>These signals feed SolydFlow Recover, Truth, and Enforce to ensure every payment reaches a final and correct state.</p>
+<hr>
+<div id="stripe-integration"></div>
+<h1>Connecting Stripe to SolydFlow</h1>
+<p>Connect your Stripe account to enable global card processing. By integrating Stripe, SolydFlow&#x27;s <strong>Consensus Engine</strong> and <strong>Sweeper</strong> can actively monitor your international transactions, resolve state mismatches, and automate recovery workflows.</p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="prerequisites-3">Prerequisites<a href="#prerequisites-3" class="hash-link" aria-label="Direct link to Prerequisites" title="Direct link to Prerequisites" translate="no">​</a></h2>
+<ul>
+<li class="">An active Stripe account (Live or Test mode).</li>
+<li class="">A SolydFlow project.</li>
+</ul>
+<hr>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="step-1-add-your-stripe-keys-to-solydflow">Step 1: Add Your Stripe Keys to SolydFlow<a href="#step-1-add-your-stripe-keys-to-solydflow" class="hash-link" aria-label="Direct link to Step 1: Add Your Stripe Keys to SolydFlow" title="Direct link to Step 1: Add Your Stripe Keys to SolydFlow" translate="no">​</a></h2>
+<p>SolydFlow requires your Stripe Secret Keys to securely initialize payments and verify transaction status directly with the Stripe API (bypassing client-side spoofing).</p>
+<ol>
+<li class="">Log in to your <a href="https://dashboard.stripe.com" target="_blank" rel="noopener noreferrer" class="">Stripe Dashboard</a>.</li>
+<li class="">Navigate to <strong>Developers → API Keys</strong>.</li>
+<li class="">Copy your <strong>Secret Key</strong> (<code>sk_live_...</code> and <code>sk_test_...</code>).</li>
+<li class="">Log in to the <strong>SolydFlow Console</strong>.</li>
+<li class="">Go to your Project settings and open the <strong>API Credentials Vault</strong>.</li>
+<li class="">Paste your Stripe Secret Keys into the Stripe section and click <strong>Save Configuration</strong>.</li>
+</ol>
+<blockquote>
+<p><strong>Security Note:</strong> SolydFlow uses military-grade AES-256-GCM encryption to store your Secret Keys at rest.</p>
+</blockquote>
+<hr>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="step-2-configure-the-inbound-webhook-2">Step 2: Configure the Inbound Webhook<a href="#step-2-configure-the-inbound-webhook-2" class="hash-link" aria-label="Direct link to Step 2: Configure the Inbound Webhook" title="Direct link to Step 2: Configure the Inbound Webhook" translate="no">​</a></h2>
+<p>Stripe must notify SolydFlow whenever a payment completes. SolydFlow uses a cryptographically secure webhook endpoint unique to your project.</p>
+<ol>
+<li class="">In the SolydFlow Console, scroll down to <strong>Inbound Gateway Webhook Configurations</strong>.</li>
+<li class="">Copy your unique Stripe Webhook URL:
+<code>https://api.solydflow.com/api/v1/webhook/stripe/{your_solydflow_api_key}</code></li>
+<li class="">In your Stripe Dashboard, navigate to <strong>Developers → Webhooks → Add Endpoint</strong>.</li>
+<li class="">Paste the SolydFlow URL.</li>
+<li class="">Under <strong>Select Events</strong>, add <code>payment_intent.succeeded</code>. (SolydFlow&#x27;s Consensus Engine will automatically query the API for the rest of the required data).</li>
+<li class="">Click <strong>Add Endpoint</strong>.</li>
+</ol>
+<hr>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="how-solydflow-secures-stripe-events">How SolydFlow Secures Stripe Events<a href="#how-solydflow-secures-stripe-events" class="hash-link" aria-label="Direct link to How SolydFlow Secures Stripe Events" title="Direct link to How SolydFlow Secures Stripe Events" translate="no">​</a></h2>
+<p>Unlike standard integrations, SolydFlow <strong>does not blindly trust incoming webhooks</strong>.</p>
+<p>When Stripe fires a webhook to SolydFlow, our <strong>Layer 2 Consensus Engine</strong> activates:</p>
+<ol>
+<li class="">We intercept the webhook.</li>
+<li class="">We pause the entitlement grant.</li>
+<li class="">We securely query the Stripe REST API using your encrypted <code>sk_live_...</code> key.</li>
+<li class="">If the live API confirms the webhook payload, we log a <code>SETTLED_CONSENSUS</code> event to your Immutable Ledger and grant the user access.</li>
+</ol>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="this-completely-eliminates-webhook-replay-attacks-and-guarantees-absolute-financial-truth">This completely eliminates Webhook Replay attacks and guarantees Absolute Financial Truth.<a href="#this-completely-eliminates-webhook-replay-attacks-and-guarantees-absolute-financial-truth" class="hash-link" aria-label="Direct link to This completely eliminates Webhook Replay attacks and guarantees Absolute Financial Truth." title="Direct link to This completely eliminates Webhook Replay attacks and guarantees Absolute Financial Truth." translate="no">​</a></h2>
 <h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="3-create-entitlements">3. Create Entitlements<a href="#3-create-entitlements" class="hash-link" aria-label="Direct link to 3. Create Entitlements" title="Direct link to 3. Create Entitlements" translate="no">​</a></h3>
 <p>Entitlements represent the access level a customer receives after a successful purchase.</p>
 <p>Examples:</p>
@@ -134,6 +343,20 @@
 <li class="">EUR</li>
 </ul>
 <h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="you-can-accept-the-suggested-pricing-or-customize-prices-manually-for-each-market">You can accept the suggested pricing or customize prices manually for each market.<a href="#you-can-accept-the-suggested-pricing-or-customize-prices-manually-for-each-market" class="hash-link" aria-label="Direct link to You can accept the suggested pricing or customize prices manually for each market." title="Direct link to You can accept the suggested pricing or customize prices manually for each market." translate="no">​</a></h2>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="6-configure-payment-routing-rules">6. Configure Payment Routing Rules<a href="#6-configure-payment-routing-rules" class="hash-link" aria-label="Direct link to 6. Configure Payment Routing Rules" title="Direct link to 6. Configure Payment Routing Rules" translate="no">​</a></h3>
+<p>SolydFlow allows you to define routing rules that determine which payment provider should be used for specific currencies or markets.</p>
+<p>Navigate to:</p>
+<div class="language-text codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-text codeBlock_bY9V thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_e6Vv"><span class="token-line" style="color:#393A34"><span class="token plain">Settings → Payment Routing Rules</span><br></span></code></pre></div></div>
+<p>Configure:</p>
+<ul>
+<li class="">A default payment provider.</li>
+<li class="">Currency-specific routing overrides.</li>
+<li class="">Local payment rail preferences.</li>
+</ul>
+<p>Example:</p>
+<table><thead><tr><th>Currency</th><th>Route To</th></tr></thead><tbody><tr><td>NGN</td><td>Monnify</td></tr><tr><td>KES</td><td>M-Pesa</td></tr><tr><td>USD</td><td>Stripe</td></tr><tr><td>Other</td><td>Paystack</td></tr></tbody></table>
+<p>These rules can be updated without releasing a new version of your application.</p>
+<hr>
 <h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="step-2-install-the-sdk">Step 2: Install the SDK<a href="#step-2-install-the-sdk" class="hash-link" aria-label="Direct link to Step 2: Install the SDK" title="Direct link to Step 2: Install the SDK" translate="no">​</a></h2>
 <p>Add SolydFlow to your Flutter project&#x27;s <code>pubspec.yaml</code>.</p>
 <div class="language-yaml codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-yaml codeBlock_bY9V thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_e6Vv"><span class="token-line" style="color:#393A34"><span class="token key atrule" style="color:#00a4db">dependencies</span><span class="token punctuation" style="color:#393A34">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token key atrule" style="color:#00a4db">flutter</span><span class="token punctuation" style="color:#393A34">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">    </span><span class="token key atrule" style="color:#00a4db">sdk</span><span class="token punctuation" style="color:#393A34">:</span><span class="token plain"> flutter</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token key atrule" style="color:#00a4db">solydflow_flutter</span><span class="token punctuation" style="color:#393A34">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">    </span><span class="token key atrule" style="color:#00a4db">git</span><span class="token punctuation" style="color:#393A34">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">      </span><span class="token key atrule" style="color:#00a4db">url</span><span class="token punctuation" style="color:#393A34">:</span><span class="token plain"> https</span><span class="token punctuation" style="color:#393A34">:</span><span class="token plain">//github.com/solydflow/solydflow_flutter.git</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">      </span><span class="token key atrule" style="color:#00a4db">path</span><span class="token punctuation" style="color:#393A34">:</span><span class="token plain"> sdk_flutter</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">      </span><span class="token key atrule" style="color:#00a4db">ref</span><span class="token punctuation" style="color:#393A34">:</span><span class="token plain"> v0.7.0</span><br></span></code></pre></div></div>
@@ -210,8 +433,9 @@
 <li class="">Subscription recovery campaigns</li>
 <li class="">Churn prevention messaging</li>
 <li class="">Customer re-engagement workflows</li>
+<li class="">and local payment rails such as M-Pesa.</li>
 </ul>
-<p>If a phone number is not available, SolydFlow will continue to function normally.</p>
+<p>If a phone number is not available, M-Pesa can not be used, you can then pass empty string for the phone number field and SolydFlow will continue to function normally.</p>
 <hr>
 <h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="when-should-initialization-happen">When Should Initialization Happen?<a href="#when-should-initialization-happen" class="hash-link" aria-label="Direct link to When Should Initialization Happen?" title="Direct link to When Should Initialization Happen?" translate="no">​</a></h3>
 <p>Initialize SolydFlow:</p>
@@ -386,6 +610,16 @@
 <li class="">Verify access using the returned <code>CustomerInfo</code>.</li>
 <li class="">Unlock premium functionality immediately.</li>
 </ol>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="checkout-experience">Checkout Experience<a href="#checkout-experience" class="hash-link" aria-label="Direct link to Checkout Experience" title="Direct link to Checkout Experience" translate="no">​</a></h3>
+<p>Depending on the configured routing rules, the customer may experience different payment flows.</p>
+<p>Examples include:</p>
+<ul>
+<li class="">Hosted checkout pages (Paystack, Flutterwave, Stripe)</li>
+<li class="">Virtual account payments (Monnify)</li>
+<li class="">Native mobile money prompts (M-Pesa)</li>
+</ul>
+<p>The SDK automatically selects and manages the appropriate flow.</p>
+<p>No additional application logic is required.</p>
 <hr>
 <h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="step-7-test-transaction-recovery">Step 7: Test Transaction Recovery<a href="#step-7-test-transaction-recovery" class="hash-link" aria-label="Direct link to Step 7: Test Transaction Recovery" title="Direct link to Step 7: Test Transaction Recovery" translate="no">​</a></h2>
 <p>One of SolydFlow&#x27;s core capabilities is transaction recovery.</p>
@@ -539,6 +773,6 @@ Unlike the mobile SDK (which returns <code>CustomerInfo</code> directly), the we
 <li class="">Steps to reproduce the issue</li>
 </ul>
 <p>This helps the team resolve issues more quickly.</p>
-<hr></div><footer class="theme-doc-footer docusaurus-mt-lg"><div class="row margin-top--sm theme-doc-footer-edit-meta-row"><div class="col noPrint_WFHX"><a href="https://github.com/facebook/docusaurus/tree/main/packages/create-docusaurus/templates/shared/docs/intro.md" target="_blank" rel="noopener noreferrer" class="theme-edit-this-page"><svg fill="currentColor" height="20" width="20" viewBox="0 0 40 40" class="iconEdit_Z9Sw" aria-hidden="true"><g><path d="m34.5 11.7l-3 3.1-6.3-6.3 3.1-3q0.5-0.5 1.2-0.5t1.1 0.5l3.9 3.9q0.5 0.4 0.5 1.1t-0.5 1.2z m-29.5 17.1l18.4-18.5 6.3 6.3-18.4 18.4h-6.3v-6.2z"></path></g></svg>Edit this page</a></div><div class="col lastUpdated_JAkA"></div></div></footer></article><nav class="docusaurus-mt-lg pagination-nav" aria-label="Docs pages"></nav></div></div><div class="col col--3"><div class="tableOfContents_bqdL thin-scrollbar theme-doc-toc-desktop"><ul class="table-of-contents table-of-contents__left-border"><li><a href="#how-solydflow-works" class="table-of-contents__link toc-highlight">How SolydFlow Works</a><ul><li><a href="#what-happens-during-a-purchase" class="table-of-contents__link toc-highlight">What Happens During a Purchase?</a></li><li><a href="#why-entitlements-matter" class="table-of-contents__link toc-highlight">Why Entitlements Matter</a></li></ul></li><li><a href="#prerequisites" class="table-of-contents__link toc-highlight">Prerequisites</a></li><li><a href="#step-1-configure-your-project-in-the-solydflow-console" class="table-of-contents__link toc-highlight">Step 1: Configure Your Project in the SolydFlow Console</a><ul><li><a href="#1-create-a-project" class="table-of-contents__link toc-highlight">1. Create a Project</a></li><li><a href="#2-connect-your-payment-providers" class="table-of-contents__link toc-highlight">2. Connect Your Payment Providers</a></li><li><a href="#3-create-entitlements" class="table-of-contents__link toc-highlight">3. Create Entitlements</a></li><li><a href="#4-create-packages" class="table-of-contents__link toc-highlight">4. Create Packages</a></li><li><a href="#5-configure-regional-pricing" class="table-of-contents__link toc-highlight">5. Configure Regional Pricing</a></li></ul></li><li><a href="#you-can-accept-the-suggested-pricing-or-customize-prices-manually-for-each-market" class="table-of-contents__link toc-highlight">You can accept the suggested pricing or customize prices manually for each market.</a></li><li><a href="#step-2-install-the-sdk" class="table-of-contents__link toc-highlight">Step 2: Install the SDK</a></li><li><a href="#platform-requirements" class="table-of-contents__link toc-highlight">Platform Requirements</a><ul><li><a href="#android" class="table-of-contents__link toc-highlight">Android</a></li><li><a href="#ios" class="table-of-contents__link toc-highlight">iOS</a></li></ul></li><li><a href="#step-3-initialize-solydflow" class="table-of-contents__link toc-highlight">Step 3: Initialize SolydFlow</a><ul><li><a href="#configuration-parameters" class="table-of-contents__link toc-highlight">Configuration Parameters</a></li><li><a href="#when-should-initialization-happen" class="table-of-contents__link toc-highlight">When Should Initialization Happen?</a></li></ul></li><li><a href="#step-4-choose-your-integration-strategy" class="table-of-contents__link toc-highlight">Step 4: Choose Your Integration Strategy</a><ul><li><a href="#option-a-custom-ui" class="table-of-contents__link toc-highlight">Option A: Custom UI</a></li><li><a href="#purchase-a-package" class="table-of-contents__link toc-highlight">Purchase a Package</a></li><li><a href="#option-b-no-code-paywall" class="table-of-contents__link toc-highlight">Option B: No-Code Paywall</a></li><li><a href="#which-option-should-you-choose" class="table-of-contents__link toc-highlight">Which Option Should You Choose?</a></li></ul></li><li><a href="#step-5-checking-entitlements-and-customer-state" class="table-of-contents__link toc-highlight">Step 5: Checking Entitlements and Customer State</a></li><li><a href="#option-a-simple-access-check-recommended-for-ui" class="table-of-contents__link toc-highlight">Option A: Simple Access Check (Recommended for UI)</a><ul><li><a href="#why-use-this-method" class="table-of-contents__link toc-highlight">Why use this method?</a></li></ul></li><li><a href="#option-b-full-customer-state-advanced" class="table-of-contents__link toc-highlight">Option B: Full Customer State (Advanced)</a></li><li><a href="#what-customerinfo-contains" class="table-of-contents__link toc-highlight">What <code>CustomerInfo</code> Contains</a></li><li><a href="#offline-first-behavior" class="table-of-contents__link toc-highlight">Offline-First Behavior</a></li><li><a href="#when-to-use-which" class="table-of-contents__link toc-highlight">When to Use Which</a></li><li><a href="#step-6-display-products-and-process-purchases" class="table-of-contents__link toc-highlight">Step 6: Display Products and Process Purchases</a></li><li><a href="#fetch-available-packages" class="table-of-contents__link toc-highlight">Fetch Available Packages</a></li><li><a href="#upgrade-pricing-and-smart-credits" class="table-of-contents__link toc-highlight">Upgrade Pricing and Smart Credits</a></li><li><a href="#initiate-a-purchase" class="table-of-contents__link toc-highlight">Initiate a Purchase</a></li><li><a href="#what-happens-during-a-purchase-1" class="table-of-contents__link toc-highlight">What Happens During a Purchase?</a></li><li><a href="#handling-purchase-results" class="table-of-contents__link toc-highlight">Handling Purchase Results</a><ul><li><a href="#successful-purchase" class="table-of-contents__link toc-highlight">Successful Purchase</a></li><li><a href="#user-cancelled" class="table-of-contents__link toc-highlight">User Cancelled</a></li><li><a href="#failed-purchase" class="table-of-contents__link toc-highlight">Failed Purchase</a></li></ul></li><li><a href="#recommended-flow" class="table-of-contents__link toc-highlight">Recommended Flow</a></li><li><a href="#step-7-test-transaction-recovery" class="table-of-contents__link toc-highlight">Step 7: Test Transaction Recovery</a></li><li><a href="#the-zombie-transaction-test" class="table-of-contents__link toc-highlight">The &quot;Zombie Transaction&quot; Test</a><ul><li><a href="#test-steps" class="table-of-contents__link toc-highlight">Test Steps</a></li><li><a href="#expected-result" class="table-of-contents__link toc-highlight">Expected Result</a></li></ul></li><li><a href="#what-this-test-validates" class="table-of-contents__link toc-highlight">What This Test Validates</a></li><li><a href="#common-issues" class="table-of-contents__link toc-highlight">Common Issues</a><ul><li><a href="#purchase-not-restored" class="table-of-contents__link toc-highlight">Purchase Not Restored</a></li><li><a href="#entitlement-not-activated" class="table-of-contents__link toc-highlight">Entitlement Not Activated</a></li><li><a href="#recovery-takes-longer-than-expected" class="table-of-contents__link toc-highlight">Recovery Takes Longer Than Expected</a></li></ul></li><li><a href="#mobile-vs-web-purchase-flow" class="table-of-contents__link toc-highlight">Mobile vs Web Purchase Flow</a><ul><li><a href="#mobile-sdk" class="table-of-contents__link toc-highlight">Mobile SDK</a></li><li><a href="#web-sdk" class="table-of-contents__link toc-highlight">Web SDK</a></li></ul></li><li><a href="#1-installation" class="table-of-contents__link toc-highlight">1. Installation</a></li><li><a href="#2-initialization" class="table-of-contents__link toc-highlight">2. Initialization</a></li><li><a href="#3-checking-access" class="table-of-contents__link toc-highlight">3. Checking Access</a></li><li><a href="#4-fetching-dynamic-pricing" class="table-of-contents__link toc-highlight">4. Fetching Dynamic Pricing</a></li><li><a href="#5-making-a-purchase-web-redirect-flow" class="table-of-contents__link toc-highlight">5. Making a Purchase (Web Redirect Flow)</a></li><li><a href="#6-handling-completed-purchases-webhooks" class="table-of-contents__link toc-highlight">6. Handling Completed Purchases (Webhooks)</a><ul><li><a href="#setup-steps" class="table-of-contents__link toc-highlight">Setup Steps</a></li><li><a href="#webhook-event-flow" class="table-of-contents__link toc-highlight">Webhook Event Flow</a></li></ul></li><li><a href="#need-help" class="table-of-contents__link toc-highlight">Need Help?</a><ul><li><a href="#documentation" class="table-of-contents__link toc-highlight">Documentation</a></li><li><a href="#support" class="table-of-contents__link toc-highlight">Support</a></li></ul></li></ul></div></div></div></div></main></div></div></div><footer class="theme-layout-footer footer footer--dark"><div class="container container-fluid"><div class="row footer__links"><div class="theme-layout-footer-column col footer__col"><div class="footer__title">Docs</div><ul class="footer__items clean-list"><li class="footer__item"><a class="footer__link-item" href="/docs/intro">Tutorial</a></li></ul></div><div class="theme-layout-footer-column col footer__col"><div class="footer__title">Community</div><ul class="footer__items clean-list"><li class="footer__item"><a href="https://stackoverflow.com/questions/tagged/docusaurus" target="_blank" rel="noopener noreferrer" class="footer__link-item">Stack Overflow<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li><li class="footer__item"><a href="https://discordapp.com/invite/docusaurus" target="_blank" rel="noopener noreferrer" class="footer__link-item">Discord<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li><li class="footer__item"><a href="https://x.com/docusaurus" target="_blank" rel="noopener noreferrer" class="footer__link-item">X<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li></ul></div><div class="theme-layout-footer-column col footer__col"><div class="footer__title">More</div><ul class="footer__items clean-list"><li class="footer__item"><a class="footer__link-item" href="/blog">Blog</a></li><li class="footer__item"><a href="https://github.com/facebook/docusaurus" target="_blank" rel="noopener noreferrer" class="footer__link-item">GitHub<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li></ul></div></div><div class="footer__bottom text--center"><div class="footer__copyright">Copyright © 2026 My Project, Inc. Built with Docusaurus.</div></div></div></footer></div>
+<hr></div><footer class="theme-doc-footer docusaurus-mt-lg"><div class="row margin-top--sm theme-doc-footer-edit-meta-row"><div class="col noPrint_WFHX"><a href="https://github.com/facebook/docusaurus/tree/main/packages/create-docusaurus/templates/shared/docs/intro.md" target="_blank" rel="noopener noreferrer" class="theme-edit-this-page"><svg fill="currentColor" height="20" width="20" viewBox="0 0 40 40" class="iconEdit_Z9Sw" aria-hidden="true"><g><path d="m34.5 11.7l-3 3.1-6.3-6.3 3.1-3q0.5-0.5 1.2-0.5t1.1 0.5l3.9 3.9q0.5 0.4 0.5 1.1t-0.5 1.2z m-29.5 17.1l18.4-18.5 6.3 6.3-18.4 18.4h-6.3v-6.2z"></path></g></svg>Edit this page</a></div><div class="col lastUpdated_JAkA"></div></div></footer></article><nav class="docusaurus-mt-lg pagination-nav" aria-label="Docs pages"></nav></div></div><div class="col col--3"><div class="tableOfContents_bqdL thin-scrollbar theme-doc-toc-desktop"><ul class="table-of-contents table-of-contents__left-border"><li><a href="#how-solydflow-works" class="table-of-contents__link toc-highlight">How SolydFlow Works</a><ul><li><a href="#what-happens-during-a-purchase" class="table-of-contents__link toc-highlight">What Happens During a Purchase?</a></li><li><a href="#why-entitlements-matter" class="table-of-contents__link toc-highlight">Why Entitlements Matter</a></li></ul></li><li><a href="#smart-payment-routing" class="table-of-contents__link toc-highlight">Smart Payment Routing</a><ul><li><a href="#example-routing-flow" class="table-of-contents__link toc-highlight">Example Routing Flow</a></li><li><a href="#supported-payment-rails" class="table-of-contents__link toc-highlight">Supported Payment Rails</a></li></ul></li><li><a href="#prerequisites" class="table-of-contents__link toc-highlight">Prerequisites</a></li><li><a href="#step-1-configure-your-project-in-the-solydflow-console" class="table-of-contents__link toc-highlight">Step 1: Configure Your Project in the SolydFlow Console</a><ul><li><a href="#1-create-a-project" class="table-of-contents__link toc-highlight">1. Create a Project</a></li><li><a href="#2-connect-your-payment-providers" class="table-of-contents__link toc-highlight">2. Connect Your Payment Providers</a></li></ul></li><li><a href="#prerequisites-1" class="table-of-contents__link toc-highlight">Prerequisites</a></li><li><a href="#step-1-add-your-paystack-secret-keys-to-solydflow" class="table-of-contents__link toc-highlight">Step 1: Add Your Paystack Secret Keys to SolydFlow</a></li><li><a href="#step-2-configure-the-inbound-webhook" class="table-of-contents__link toc-highlight">Step 2: Configure the Inbound Webhook</a></li><li><a href="#how-solydflow-secures-paystack-events" class="table-of-contents__link toc-highlight">How SolydFlow Secures Paystack Events</a></li><li><a href="#what-solydflow-monitors" class="table-of-contents__link toc-highlight">What SolydFlow Monitors</a></li><li><a href="#prerequisites-2" class="table-of-contents__link toc-highlight">Prerequisites</a></li><li><a href="#step-1-add-your-flutterwave-secret-keys-to-solydflow" class="table-of-contents__link toc-highlight">Step 1: Add Your Flutterwave Secret Keys to SolydFlow</a></li><li><a href="#step-2-configure-the-inbound-webhook-1" class="table-of-contents__link toc-highlight">Step 2: Configure the Inbound Webhook</a></li><li><a href="#how-solydflow-secures-flutterwave-events" class="table-of-contents__link toc-highlight">How SolydFlow Secures Flutterwave Events</a></li><li><a href="#what-solydflow-monitors-1" class="table-of-contents__link toc-highlight">What SolydFlow Monitors</a></li><li><a href="#prerequisites-3" class="table-of-contents__link toc-highlight">Prerequisites</a></li><li><a href="#step-1-add-your-stripe-keys-to-solydflow" class="table-of-contents__link toc-highlight">Step 1: Add Your Stripe Keys to SolydFlow</a></li><li><a href="#step-2-configure-the-inbound-webhook-2" class="table-of-contents__link toc-highlight">Step 2: Configure the Inbound Webhook</a></li><li><a href="#how-solydflow-secures-stripe-events" class="table-of-contents__link toc-highlight">How SolydFlow Secures Stripe Events</a></li><li><a href="#this-completely-eliminates-webhook-replay-attacks-and-guarantees-absolute-financial-truth" class="table-of-contents__link toc-highlight">This completely eliminates Webhook Replay attacks and guarantees Absolute Financial Truth.</a><ul><li><a href="#3-create-entitlements" class="table-of-contents__link toc-highlight">3. Create Entitlements</a></li><li><a href="#4-create-packages" class="table-of-contents__link toc-highlight">4. Create Packages</a></li><li><a href="#5-configure-regional-pricing" class="table-of-contents__link toc-highlight">5. Configure Regional Pricing</a></li></ul></li><li><a href="#you-can-accept-the-suggested-pricing-or-customize-prices-manually-for-each-market" class="table-of-contents__link toc-highlight">You can accept the suggested pricing or customize prices manually for each market.</a><ul><li><a href="#6-configure-payment-routing-rules" class="table-of-contents__link toc-highlight">6. Configure Payment Routing Rules</a></li></ul></li><li><a href="#step-2-install-the-sdk" class="table-of-contents__link toc-highlight">Step 2: Install the SDK</a></li><li><a href="#platform-requirements" class="table-of-contents__link toc-highlight">Platform Requirements</a><ul><li><a href="#android" class="table-of-contents__link toc-highlight">Android</a></li><li><a href="#ios" class="table-of-contents__link toc-highlight">iOS</a></li></ul></li><li><a href="#step-3-initialize-solydflow" class="table-of-contents__link toc-highlight">Step 3: Initialize SolydFlow</a><ul><li><a href="#configuration-parameters" class="table-of-contents__link toc-highlight">Configuration Parameters</a></li><li><a href="#when-should-initialization-happen" class="table-of-contents__link toc-highlight">When Should Initialization Happen?</a></li></ul></li><li><a href="#step-4-choose-your-integration-strategy" class="table-of-contents__link toc-highlight">Step 4: Choose Your Integration Strategy</a><ul><li><a href="#option-a-custom-ui" class="table-of-contents__link toc-highlight">Option A: Custom UI</a></li><li><a href="#purchase-a-package" class="table-of-contents__link toc-highlight">Purchase a Package</a></li><li><a href="#option-b-no-code-paywall" class="table-of-contents__link toc-highlight">Option B: No-Code Paywall</a></li><li><a href="#which-option-should-you-choose" class="table-of-contents__link toc-highlight">Which Option Should You Choose?</a></li></ul></li><li><a href="#step-5-checking-entitlements-and-customer-state" class="table-of-contents__link toc-highlight">Step 5: Checking Entitlements and Customer State</a></li><li><a href="#option-a-simple-access-check-recommended-for-ui" class="table-of-contents__link toc-highlight">Option A: Simple Access Check (Recommended for UI)</a><ul><li><a href="#why-use-this-method" class="table-of-contents__link toc-highlight">Why use this method?</a></li></ul></li><li><a href="#option-b-full-customer-state-advanced" class="table-of-contents__link toc-highlight">Option B: Full Customer State (Advanced)</a></li><li><a href="#what-customerinfo-contains" class="table-of-contents__link toc-highlight">What <code>CustomerInfo</code> Contains</a></li><li><a href="#offline-first-behavior" class="table-of-contents__link toc-highlight">Offline-First Behavior</a></li><li><a href="#when-to-use-which" class="table-of-contents__link toc-highlight">When to Use Which</a></li><li><a href="#step-6-display-products-and-process-purchases" class="table-of-contents__link toc-highlight">Step 6: Display Products and Process Purchases</a></li><li><a href="#fetch-available-packages" class="table-of-contents__link toc-highlight">Fetch Available Packages</a></li><li><a href="#upgrade-pricing-and-smart-credits" class="table-of-contents__link toc-highlight">Upgrade Pricing and Smart Credits</a></li><li><a href="#initiate-a-purchase" class="table-of-contents__link toc-highlight">Initiate a Purchase</a></li><li><a href="#what-happens-during-a-purchase-1" class="table-of-contents__link toc-highlight">What Happens During a Purchase?</a></li><li><a href="#handling-purchase-results" class="table-of-contents__link toc-highlight">Handling Purchase Results</a><ul><li><a href="#successful-purchase" class="table-of-contents__link toc-highlight">Successful Purchase</a></li><li><a href="#user-cancelled" class="table-of-contents__link toc-highlight">User Cancelled</a></li><li><a href="#failed-purchase" class="table-of-contents__link toc-highlight">Failed Purchase</a></li></ul></li><li><a href="#recommended-flow" class="table-of-contents__link toc-highlight">Recommended Flow</a><ul><li><a href="#checkout-experience" class="table-of-contents__link toc-highlight">Checkout Experience</a></li></ul></li><li><a href="#step-7-test-transaction-recovery" class="table-of-contents__link toc-highlight">Step 7: Test Transaction Recovery</a></li><li><a href="#the-zombie-transaction-test" class="table-of-contents__link toc-highlight">The &quot;Zombie Transaction&quot; Test</a><ul><li><a href="#test-steps" class="table-of-contents__link toc-highlight">Test Steps</a></li><li><a href="#expected-result" class="table-of-contents__link toc-highlight">Expected Result</a></li></ul></li><li><a href="#what-this-test-validates" class="table-of-contents__link toc-highlight">What This Test Validates</a></li><li><a href="#common-issues" class="table-of-contents__link toc-highlight">Common Issues</a><ul><li><a href="#purchase-not-restored" class="table-of-contents__link toc-highlight">Purchase Not Restored</a></li><li><a href="#entitlement-not-activated" class="table-of-contents__link toc-highlight">Entitlement Not Activated</a></li><li><a href="#recovery-takes-longer-than-expected" class="table-of-contents__link toc-highlight">Recovery Takes Longer Than Expected</a></li></ul></li><li><a href="#mobile-vs-web-purchase-flow" class="table-of-contents__link toc-highlight">Mobile vs Web Purchase Flow</a><ul><li><a href="#mobile-sdk" class="table-of-contents__link toc-highlight">Mobile SDK</a></li><li><a href="#web-sdk" class="table-of-contents__link toc-highlight">Web SDK</a></li></ul></li><li><a href="#1-installation" class="table-of-contents__link toc-highlight">1. Installation</a></li><li><a href="#2-initialization" class="table-of-contents__link toc-highlight">2. Initialization</a></li><li><a href="#3-checking-access" class="table-of-contents__link toc-highlight">3. Checking Access</a></li><li><a href="#4-fetching-dynamic-pricing" class="table-of-contents__link toc-highlight">4. Fetching Dynamic Pricing</a></li><li><a href="#5-making-a-purchase-web-redirect-flow" class="table-of-contents__link toc-highlight">5. Making a Purchase (Web Redirect Flow)</a></li><li><a href="#6-handling-completed-purchases-webhooks" class="table-of-contents__link toc-highlight">6. Handling Completed Purchases (Webhooks)</a><ul><li><a href="#setup-steps" class="table-of-contents__link toc-highlight">Setup Steps</a></li><li><a href="#webhook-event-flow" class="table-of-contents__link toc-highlight">Webhook Event Flow</a></li></ul></li><li><a href="#need-help" class="table-of-contents__link toc-highlight">Need Help?</a><ul><li><a href="#documentation" class="table-of-contents__link toc-highlight">Documentation</a></li><li><a href="#support" class="table-of-contents__link toc-highlight">Support</a></li></ul></li></ul></div></div></div></div></main></div></div></div><footer class="theme-layout-footer footer footer--dark"><div class="container container-fluid"><div class="row footer__links"><div class="theme-layout-footer-column col footer__col"><div class="footer__title">Docs</div><ul class="footer__items clean-list"><li class="footer__item"><a class="footer__link-item" href="/docs/intro">Tutorial</a></li></ul></div><div class="theme-layout-footer-column col footer__col"><div class="footer__title">Community</div><ul class="footer__items clean-list"><li class="footer__item"><a href="https://stackoverflow.com/questions/tagged/docusaurus" target="_blank" rel="noopener noreferrer" class="footer__link-item">Stack Overflow<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li><li class="footer__item"><a href="https://discordapp.com/invite/docusaurus" target="_blank" rel="noopener noreferrer" class="footer__link-item">Discord<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li><li class="footer__item"><a href="https://x.com/docusaurus" target="_blank" rel="noopener noreferrer" class="footer__link-item">X<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li></ul></div><div class="theme-layout-footer-column col footer__col"><div class="footer__title">More</div><ul class="footer__items clean-list"><li class="footer__item"><a class="footer__link-item" href="/blog">Blog</a></li><li class="footer__item"><a href="https://github.com/facebook/docusaurus" target="_blank" rel="noopener noreferrer" class="footer__link-item">GitHub<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li></ul></div></div><div class="footer__bottom text--center"><div class="footer__copyright">Copyright © 2026 My Project, Inc. Built with Docusaurus.</div></div></div></footer></div>
 </body>
 </html>
