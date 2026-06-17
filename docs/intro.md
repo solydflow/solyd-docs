@@ -4,7 +4,10 @@
 
 SolydFlow is the revenue infrastructure for African mobile apps.
 
-It unifies app stores (Apple App Store and Google Play), local African payment gateways (Paystack and Flutterwave), and Stripe for global users outside local markets into a single API, allowing you to manage subscriptions, purchases, and customer access from one place.
+It unifies app stores (Apple App Store and Google Play), local African payment gateways (Paystack and Flutterwave), and Stripe for global coverage and portability into a single API.
+
+Beyond payment aggregation, SolydFlow includes Smart Payment Routing, allowing transactions to be automatically routed to the payment rail most likely to succeed based on the customer's region, currency, and available payment methods.
+
 
 Built for the realities of emerging markets, SolydFlow provides:
 
@@ -65,6 +68,52 @@ This allows you to manage access consistently regardless of billing period, curr
 
 ---
 
+## Smart Payment Routing
+
+SolydFlow can automatically route payments to the most appropriate payment provider based on currency, geography, and configured routing rules.
+
+This helps improve conversion rates by reducing failed card transactions and directing users to payment methods that are commonly used in their region.
+
+### Example Routing Flow
+
+```text
+Customer (NGN)
+        ↓
+SolydFlow Smart Router
+        ↓
+Monnify Virtual Account
+```
+
+```text
+Customer (KES)
+        ↓
+SolydFlow Smart Router
+        ↓
+M-Pesa STK Push
+```
+
+```text
+Customer (USD)
+        ↓
+SolydFlow Smart Router
+        ↓
+Stripe
+```
+
+### Supported Payment Rails
+
+| Payment Rail    | Best For                      |
+| --------------- | ----------------------------- |
+| Paystack        | General African card payments |
+| Flutterwave     | General African card payments |
+| Monnify         | Nigerian virtual accounts     |
+| M-Pesa / Daraja | Kenyan mobile money payments  |
+| Stripe          | Global card payments          |
+
+Routing rules are configured from the SolydFlow Console and require no application code changes.
+
+---
+
 
 ## Prerequisites
 
@@ -95,9 +144,19 @@ After creation, you'll receive:
 
 ### 2. Connect Your Payment Providers
 
-SolydFlow follows a Bring Your Own Gateway (BYOK) model.
+SolydFlow follows a secure **Bring Your Own Keys (BYOK)** model. This ensures you maintain direct ownership of your merchant accounts, payouts, and compliance, while SolydFlow orchestrates the intelligence and routing.
 
-Navigate to **Project Settings → Connect Gateway** and connect the payment providers you want to use.
+Navigate to **SolydFlow Console → Projects → Configuration (Settings Icon)** to access your **API Credentials Vault** and connect the payment providers you want to use.
+
+Depending on your target markets, configure the following providers:
+
+*   **[Connecting Paystack (Pan-African Cards)](#paystack-integration)**
+*   **[Connecting Flutterwave (Pan-African Cards)](#flutterwave-integration)**
+*   **[Connecting Stripe (Global Cards)](#stripe-integration)**
+*   **[Connecting Monnify (Nigerian Virtual Accounts) - coming soon](#)**
+*   **[Connecting M-Pesa / Daraja (Kenyan Mobile Money)](#)**
+
+*(Click any provider above to view their specific key and webhook setup guide).*
 
 > **Production-ready providers**
 >
@@ -110,7 +169,7 @@ Navigate to **Project Settings → Connect Gateway** and connect the payment pro
 > * Google Play Billing
 > * Stripe
 
-For each provider:
+Overview for each provider:
 
 1. Paste your provider's Secret Key.
 2. Save the configuration.
@@ -124,6 +183,232 @@ Webhook integration enables:
 * Background subscription synchronization
 * Restoration of interrupted purchases
 
+---
+
+<div id="paystack-integration"></div>
+# Connecting Paystack to SolydFlow
+
+Connect your Paystack account to enable payment monitoring, transaction recovery, and financial consensus across your revenue infrastructure.
+
+By integrating Paystack, SolydFlow's **Consensus Engine**, **Sweeper**, and **Immutable Ledger** continuously monitor transaction states and eliminate revenue uncertainty.
+
+## Prerequisites
+
+* An active Paystack account (Live or Test mode).
+* A SolydFlow project.
+
+---
+
+## Step 1: Add Your Paystack Secret Keys to SolydFlow
+
+SolydFlow requires your Paystack Secret Keys to initialize payments and independently verify transaction states directly from Paystack's API.
+
+1. Log in to your Paystack Dashboard.
+2. Navigate to **Settings → API Keys & Webhooks**.
+3. Copy your **Secret Key** (`sk_live_...` and `sk_test_...`).
+4. Log in to the SolydFlow Console.
+5. Open your Project settings.
+6. Navigate to **API Credentials Vault**.
+7. Paste your Paystack Secret Keys into the Paystack section.
+8. Click **Save Configuration**.
+
+> **Security Note:** All gateway credentials are encrypted using AES-256-GCM and are never exposed to client applications.
+
+---
+
+## Step 2: Configure the Inbound Webhook
+
+Paystack must notify SolydFlow when payment activity occurs.
+
+1. In the SolydFlow Console, open **Inbound Gateway Webhook Configurations**.
+2. Copy your Paystack Webhook URL:
+
+```text
+https://api.solydflow.com/api/v1/webhook/paystack/{your_solydflow_api_key}
+```
+
+3. Log in to Paystack.
+4. Navigate to **Settings → API Keys & Webhooks**.
+5. Paste the SolydFlow URL into the Webhook URL field.
+6. Save your configuration.
+
+---
+
+## How SolydFlow Secures Paystack Events
+
+SolydFlow never grants access based solely on a webhook payload.
+
+When Paystack sends an event:
+
+1. SolydFlow intercepts the webhook.
+2. The Consensus Engine pauses entitlement activation.
+3. SolydFlow securely queries Paystack's Verify Transaction API using your encrypted Secret Key.
+4. The returned transaction state is compared against the webhook payload.
+5. If both states agree, SolydFlow records a `SETTLED_CONSENSUS` event in the Immutable Ledger.
+6. Access is granted.
+
+This prevents:
+
+* Webhook spoofing
+* Replay attacks
+* State manipulation
+* False payment confirmations
+
+---
+
+## What SolydFlow Monitors
+
+Once connected, SolydFlow continuously tracks:
+
+* Successful transactions
+* Delayed callbacks
+* Missing webhooks
+* Abandoned checkouts
+* Zombie transactions
+* State mismatches
+
+These signals power Recover, Truth, and Enforce across your payment infrastructure.
+
+---
+
+<div id="flutterwave-integration"></div>
+# Connecting Flutterwave to SolydFlow
+
+Connect your Flutterwave account to enable transaction recovery, payment verification, and financial consensus across your revenue stack.
+
+By integrating Flutterwave, SolydFlow's **Consensus Engine** continuously verifies transaction states before access is granted to customers.
+
+## Prerequisites
+
+* An active Flutterwave account (Live or Test mode).
+* A SolydFlow project.
+
+---
+
+## Step 1: Add Your Flutterwave Secret Keys to SolydFlow
+
+SolydFlow requires your Flutterwave Secret Keys to independently verify transactions and eliminate trust in client-side responses.
+
+1. Log in to your Flutterwave Dashboard.
+2. Navigate to **Settings → API Keys**.
+3. Copy your Secret Key (`FLWSECK_TEST...` and `FLWSECK_LIVE...`).
+4. Log in to the SolydFlow Console.
+5. Open your Project settings.
+6. Navigate to **API Credentials Vault**.
+7. Paste your Flutterwave Secret Keys into the Flutterwave section.
+8. Click **Save Configuration**.
+
+> **Security Note:** SolydFlow encrypts all gateway credentials using AES-256-GCM before storage.
+
+---
+
+## Step 2: Configure the Inbound Webhook
+
+Flutterwave must notify SolydFlow whenever transaction activity occurs.
+
+1. In the SolydFlow Console, open **Inbound Gateway Webhook Configurations**.
+2. Copy your Flutterwave Webhook URL:
+
+```text
+https://api.solydflow.com/api/v1/webhook/flutterwave/{your_solydflow_api_key}
+```
+
+3. Log in to Flutterwave.
+4. Navigate to **Settings → Webhooks**.
+5. Paste the SolydFlow URL.
+6. Save your webhook configuration.
+
+---
+
+## How SolydFlow Secures Flutterwave Events
+
+Unlike traditional integrations, SolydFlow does not blindly trust incoming webhooks.
+
+When Flutterwave sends a payment event:
+
+1. SolydFlow receives the webhook.
+2. The Consensus Engine pauses entitlement activation.
+3. SolydFlow queries Flutterwave's transaction verification API using your encrypted Secret Key.
+4. The API response is compared against the webhook payload.
+5. If consensus is reached, a `SETTLED_CONSENSUS` record is written to the Immutable Ledger.
+6. User access is activated.
+
+This guarantees financial truth even when:
+
+* Webhooks arrive late
+* Duplicate events are received
+* Client responses are manipulated
+* Network interruptions occur
+
+---
+
+## What SolydFlow Monitors
+
+After connection, SolydFlow actively monitors:
+
+* Successful payments
+* Pending transactions
+* Failed callbacks
+* Missing webhooks
+* Delayed settlements
+* Zombie transactions
+* Ledger conflicts
+
+These signals feed SolydFlow Recover, Truth, and Enforce to ensure every payment reaches a final and correct state.
+
+---
+
+<div id="stripe-integration"></div>
+# Connecting Stripe to SolydFlow
+
+Connect your Stripe account to enable global card processing. By integrating Stripe, SolydFlow's **Consensus Engine** and **Sweeper** can actively monitor your international transactions, resolve state mismatches, and automate recovery workflows.
+
+## Prerequisites
+* An active Stripe account (Live or Test mode).
+* A SolydFlow project.
+
+---
+
+## Step 1: Add Your Stripe Keys to SolydFlow
+
+SolydFlow requires your Stripe Secret Keys to securely initialize payments and verify transaction status directly with the Stripe API (bypassing client-side spoofing).
+
+1. Log in to your [Stripe Dashboard](https://dashboard.stripe.com).
+2. Navigate to **Developers → API Keys**.
+3. Copy your **Secret Key** (`sk_live_...` and `sk_test_...`).
+4. Log in to the **SolydFlow Console**.
+5. Go to your Project settings and open the **API Credentials Vault**.
+6. Paste your Stripe Secret Keys into the Stripe section and click **Save Configuration**.
+
+> **Security Note:** SolydFlow uses military-grade AES-256-GCM encryption to store your Secret Keys at rest.
+
+---
+
+## Step 2: Configure the Inbound Webhook
+
+Stripe must notify SolydFlow whenever a payment completes. SolydFlow uses a cryptographically secure webhook endpoint unique to your project.
+
+1. In the SolydFlow Console, scroll down to **Inbound Gateway Webhook Configurations**.
+2. Copy your unique Stripe Webhook URL:
+   `https://api.solydflow.com/api/v1/webhook/stripe/{your_solydflow_api_key}`
+3. In your Stripe Dashboard, navigate to **Developers → Webhooks → Add Endpoint**.
+4. Paste the SolydFlow URL.
+5. Under **Select Events**, add `payment_intent.succeeded`. (SolydFlow's Consensus Engine will automatically query the API for the rest of the required data).
+6. Click **Add Endpoint**.
+
+---
+
+## How SolydFlow Secures Stripe Events
+
+Unlike standard integrations, SolydFlow **does not blindly trust incoming webhooks**. 
+
+When Stripe fires a webhook to SolydFlow, our **Layer 2 Consensus Engine** activates:
+1. We intercept the webhook.
+2. We pause the entitlement grant.
+3. We securely query the Stripe REST API using your encrypted `sk_live_...` key.
+4. If the live API confirms the webhook payload, we log a `SETTLED_CONSENSUS` event to your Immutable Ledger and grant the user access. 
+
+This completely eliminates Webhook Replay attacks and guarantees Absolute Financial Truth.
 ---
 
 ### 3. Create Entitlements
@@ -179,6 +464,36 @@ This helps maintain purchasing-power parity across currencies such as:
 
 You can accept the suggested pricing or customize prices manually for each market.
 ---
+
+### 6. Configure Payment Routing Rules
+
+SolydFlow allows you to define routing rules that determine which payment provider should be used for specific currencies or markets.
+
+Navigate to:
+
+```text
+Settings → Payment Routing Rules
+```
+
+Configure:
+
+* A default payment provider.
+* Currency-specific routing overrides.
+* Local payment rail preferences.
+
+Example:
+
+| Currency | Route To |
+| -------- | -------- |
+| NGN      | Monnify  |
+| KES      | M-Pesa   |
+| USD      | Stripe   |
+| Other    | Paystack |
+
+These rules can be updated without releasing a new version of your application.
+
+---
+
 ## Step 2: Install the SDK
 
 Add SolydFlow to your Flutter project's `pubspec.yaml`.
@@ -342,8 +657,9 @@ Providing a phone number enables SolydFlow features such as:
 * Subscription recovery campaigns
 * Churn prevention messaging
 * Customer re-engagement workflows
+* and local payment rails such as M-Pesa.
 
-If a phone number is not available, SolydFlow will continue to function normally.
+If a phone number is not available, M-Pesa can not be used, you can then pass empty string for the phone number field and SolydFlow will continue to function normally.
 
 ---
 
@@ -746,6 +1062,20 @@ Always handle all three scenarios to provide a smooth user experience.
 4. Call `purchasePackage()`.
 5. Verify access using the returned `CustomerInfo`.
 6. Unlock premium functionality immediately.
+
+### Checkout Experience
+
+Depending on the configured routing rules, the customer may experience different payment flows.
+
+Examples include:
+
+* Hosted checkout pages (Paystack, Flutterwave, Stripe)
+* Virtual account payments (Monnify)
+* Native mobile money prompts (M-Pesa)
+
+The SDK automatically selects and manages the appropriate flow.
+
+No additional application logic is required.
 
 ---
 
