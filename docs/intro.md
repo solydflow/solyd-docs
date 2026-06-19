@@ -162,12 +162,12 @@ Depending on your target markets, configure the following providers:
 >
 > * Paystack
 > * Flutterwave
+> * Stripe
 >
 > **Currently in testing**
 >
 > * Apple In-App Purchases
 > * Google Play Billing
-> * Stripe
 
 Overview for each provider:
 
@@ -1267,36 +1267,81 @@ await SolydFlow.configure(
 
 ---
 
-## 3. Checking Access
+## 3. Choose Your Integration Strategy
 
-Check whether the current user has an active entitlement.
+The SolydFlow JavaScript SDK supports two integration approaches.
 
-```javascript id="c8v1mz"
-async function checkAccess() {
-  const isGold = await SolydFlow.hasEntitlement("gold_access");
-
-  if (isGold) {
-    console.log("Welcome to the premium dashboard!");
-  } else {
-    // Redirect to pricing page
-  }
-}
-```
+| Option          | Best For                                                                               |
+| --------------- | -------------------------------------------------------------------------------------- |
+| Drop-In Paywall | Teams that want the fastest integration and dashboard-managed pricing experiences.     |
+| Custom UI       | Teams that want complete control over their website's pricing and checkout experience. |
 
 ---
 
-## 4. Fetching Dynamic Pricing
+### Option A: Drop-In Paywall
 
-Fetch packages configured in your SolydFlow dashboard.
+Instead of spending days building your own pricing page, SolydFlow provides a fully responsive, high-converting Drop-In Paywall that automatically stays synchronized with the design, colors, copy, products, and pricing configured in your SolydFlow Console.
 
-SolydFlow automatically applies:
+The paywall automatically handles:
 
 * Purchasing Power Parity (Geo-IP pricing)
 * Smart Upgrade Credits
-* User-based pricing rules
+* Payment routing rules
+* Checkout initiation
+* Product rendering
 
-```javascript id="k1q9dp"
-async function renderPaywall() {
+#### Step 1: Create a Container
+
+Add a container element to your page:
+
+```html
+<div id="solydflow-paywall-container"></div>
+```
+
+#### Step 2: Render the Paywall
+
+```javascript
+import { SolydFlow } from "solydflow-js";
+
+async function showPricing() {
+  await SolydFlow.configure(
+    "sf_pk_live_YOUR_PUBLIC_KEY",
+    "user_12345"
+  );
+
+  await SolydFlow.renderPaywall(
+    "solydflow-paywall-container"
+  );
+}
+```
+
+That's all that's required.
+
+The SDK automatically loads and renders the paywall you designed in the SolydFlow Console.
+
+#### When Should You Use This?
+
+Choose the Drop-In Paywall if:
+
+* You want the fastest implementation.
+* Product teams manage pricing and promotions.
+* You want paywall updates without deploying new website code.
+* You want built-in optimization and localization.
+
+---
+
+### Option B: Custom UI (Advanced)
+
+If you prefer to build your own pricing experience, you can fetch package information directly and render your own components.
+
+SolydFlow will still calculate:
+
+* Purchasing Power Parity pricing
+* Smart Upgrade Credits
+* Regional pricing adjustments
+
+```javascript
+async function fetchRawPackages() {
   const offerings = await SolydFlow.getOfferings();
 
   offerings.forEach(pkg => {
@@ -1310,6 +1355,27 @@ async function renderPaywall() {
       );
     }
   });
+}
+```
+
+You are responsible for rendering the UI, while SolydFlow remains responsible for pricing logic, checkout routing, and entitlement management.
+
+
+---
+
+## 4. Checking Access
+
+Check whether the current user has an active entitlement.
+
+```javascript id="c8v1mz"
+async function checkAccess() {
+  const isGold = await SolydFlow.hasEntitlement("gold_access");
+
+  if (isGold) {
+    console.log("Welcome to the premium dashboard!");
+  } else {
+    // Redirect to pricing page
+  }
 }
 ```
 
