@@ -1406,34 +1406,275 @@ async function handleCheckout(packageId) {
 
 ---
 
-## 6. Handling Completed Purchases (Webhooks)
+## 6. Fulfilling the Purchase (Webhooks)
 
-Because web applications cannot directly observe payment completion, SolydFlow uses backend webhooks.
+Unlike the mobile SDK, web applications cannot wait for a payment to complete because the customer is redirected to a hosted checkout experience.
 
-### Setup Steps
+To unlock subscriptions, grant entitlements, and synchronize customer access, you must configure a backend webhook endpoint.
 
-1. Go to SolydFlow Console → Projects
-2. Open your project settings
-3. Locate **Webhook Configuration**
-4. Add your backend endpoint (e.g. Node.js, Supabase, or serverless function)
+### Configure Your Webhook Endpoint
+
+1. Log in to the SolydFlow Console.
+2. Navigate to **Projects**.
+3. Click **Manage Connection**.
+4. Under **Your Backend Webhook**.
+5. Enter your backend endpoint URL (for example, a Node.js API, Laravel endpoint, Django view, or Supabase Edge Function).
+6. Save the configuration.
+
+When subscription activity occurs, SolydFlow securely delivers signed webhook events to your backend.
+
+Examples include:
+
+* `subscription_started`
+* `subscription_renewed`
+* `subscription_upgraded`
+* `subscription_cancelled`
+* `entitlement_restored`
 
 ---
 
-### Webhook Event Flow
+### Example Event Payload
 
-When a payment is completed:
-
-```text id="q8w1zp"
-Customer → Checkout → Payment Provider → SolydFlow → Webhook → Your Backend
+```json
+{
+  "event": "subscription_renewed",
+  "customer_id": "user_12345",
+  "entitlement": "gold_access",
+  "package_id": "gold_monthly",
+  "expires_at": "2026-12-31T00:00:00Z"
+}
 ```
 
-SolydFlow sends a `subscription_renewed` event to your backend.
+Your backend should use these events to update customer records, synchronize subscriptions, and unlock application features.
 
-Your backend should then:
+---
 
-* Validate the event
-* Update user subscription state
-* Activate entitlements in your database
+### Securing Your Webhooks
+
+Because webhook endpoints are publicly accessible, every incoming request must be verified before processing.
+
+SolydFlow protects webhook deliveries using:
+
+* Cryptographic request signatures
+* Timestamp validation
+* Replay attack protection
+
+### The Signature Header
+
+Every webhook request includes the following header:
+
+```text
+X-SolydFlow-Signature: t=1687263530,v1=9b1d2e3f4a5b6c7d8e9f...
+```
+
+The header contains two values:
+
+| Field | Description                                      |
+| ----- | ------------------------------------------------ |
+| `t`   | UNIX timestamp of when the webhook was generated |
+| `v1`  | HMAC SHA-256 cryptographic signature             |
+
+---
+
+### Verification Process
+
+Your backend should perform three verification steps before processing any webhook.
+
+#### Step 1: Extract the Timestamp and Signature
+
+Parse the `X-SolydFlow-Signature` header and extract:
+
+* Timestamp (`t`)
+* Signature (`v1`)
+
+#### Step 2: Prevent Replay Attacks
+
+Compare the supplied timestamp against your server's current UNIX timestamp.
+
+Reject requests older than **300 seconds (5 minutes)**.
+
+This prevents attackers from intercepting a valid webhook and replaying it later.
+
+#### Step 3: Verify the Signature
+
+Construct the payload using:
+
+```text
+timestamp.raw_body
+```
+
+Example:
+
+```text
+1687263530.{"event":"subscription_renewed"}
+```
+
+Generate an HMAC SHA-256 hash using your SolydFlow Webhook Secret and compare it against the supplied `v1` signature.
+
+Only process the webhook if both signatures match.
+
+---
+
+### Node.js / Express Verification Example
+
+The example below demonstrates a complete webhook verification implementation.
+
+```javascript
+const express = require('express');
+const crypto = require('crypto');
+
+const app = express();
+
+// Preserve the raw request body for signature verification
+app.use(express.json({
+  verify: (req, res, buf) => {
+    req.rawBody = buf.toString();
+  }
+}));
+
+const SOLYDFLOW_WEBHOOK_SECRET =
+  process.env.SOLYDFLOW_WEBHOOK_SECRET;
+
+app.post('/webhook/solydflow', (req, res) => {
+  const signatureHeader =
+    req.headers['x-solydflow-signature'];
+
+  if (!signatureHeader) {
+    return res
+      .status(401)
+      .send('Missing SolydFlow signature');
+  }
+
+  // Extract timestamp and signature
+  const parsedHeader = signatureHeader
+    .split(',')
+    .reduce((acc, pair) => {
+      const [key, value] = pair.split('=');
+      acc[key] = value;
+      return acc;
+    }, {});
+
+  const timestamp = parsedHeader['t'];
+  const providedSignature = parsedHeader['v1'];
+
+  if (!timestamp || !providedSignature) {
+    return res
+      .status(401)
+      .send('Invalid signature format');
+  }
+
+  // Replay attack protection
+  const currentTimestamp =
+    Math.floor(Date.now() / 1000);
+
+  const webhookAge =
+    currentTimestamp - parseInt(timestamp, 10);
+
+  if (webhookAge > 300) {
+    return res
+      .status(401)
+      .send(
+        'Webhook timestamp is too old'
+      );
+  }
+
+  // Compute expected signature
+  const payloadToSign =
+    `${timestamp}.${req.rawBody}`;
+
+  const expectedSignature = crypto
+    .createHmac(
+      'sha256',
+      SOLYDFLOW_WEBHOOK_SECRET
+    )
+    .update(payloadToSign)
+    .digest('hex');
+
+  const isValid =
+    crypto.timingSafeEqual(
+      Buffer.from(expectedSignature),
+      Buffer.from(providedSignature)
+    );
+
+  if (!isValid) {
+    return res
+      .status(401)
+      .send(
+        'Cryptographic signature mismatch'
+      );
+  }
+
+  // Webhook verified
+  const event = req.body;
+
+  console.log(
+    'Verified SolydFlow Event:',
+    event.event
+  );
+
+  switch (event.event) {
+    case 'subscription_started':
+      // Create subscription
+      break;
+
+    case 'subscription_renewed':
+      // Extend subscription
+      break;
+
+    case 'subscription_upgraded':
+      // Update entitlement
+      break;
+
+    case 'subscription_cancelled':
+      // Revoke access
+      break;
+
+    case 'entitlement_restored':
+      // Restore access
+      break;
+
+    default:
+      console.log(
+        'Unhandled event:',
+        event.event
+      );
+  }
+
+  // Acknowledge receipt
+  return res.status(200).json({
+    received: true
+  });
+});
+
+app.listen(3000, () => {
+  console.log(
+    'Server listening on port 3000'
+  );
+});
+```
+
+---
+
+### Production Best Practices
+
+Before updating customer records, your backend should:
+
+1. Verify the webhook signature.
+2. Verify the timestamp.
+3. Reject duplicate events (idempotency).
+4. Update customer subscription records.
+5. Synchronize entitlement access.
+6. Return a successful response immediately.
+
+A successful webhook response should return:
+
+```javascript
+res.status(200).json({
+  received: true
+});
+```
+
+This confirms to SolydFlow that the event was successfully delivered and processed.
 
 ---
 
