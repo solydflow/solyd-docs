@@ -1240,14 +1240,20 @@ Instead, SolydFlow notifies your backend using webhooks after the transaction ha
 
 Install directly from GitHub:
 
-```bash id="n3kq9v"
-npm install git+https://github.com/solydflow/solydflow-js.git
+```bash
+npm install solydflow-js
 ```
 
 or:
 
-```bash id="d9x2kq"
-yarn add git+https://github.com/solydflow/solydflow-js.git
+```bash
+yarn add solydflow-js
+```
+
+or
+
+```bash
+pnpm add solydflow-js
 ```
 
 ---
@@ -1256,7 +1262,7 @@ yarn add git+https://github.com/solydflow/solydflow-js.git
 
 Initialize the SDK as early as possible in your web application.
 
-```javascript id="p2x8la"
+```javascript
 import { SolydFlow } from "solydflow-js";
 
 await SolydFlow.configure(
