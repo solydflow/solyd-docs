@@ -1429,25 +1429,76 @@ To unlock subscriptions, grant entitlements, and synchronize customer access, yo
 
 When subscription activity occurs, SolydFlow securely delivers signed webhook events to your backend.
 
-Examples include:
+## The 4 Webhook Events
 
-* `subscription_started`
-* `subscription_renewed`
-* `subscription_upgraded`
-* `subscription_cancelled`
-* `entitlement_restored`
+To keep your integration incredibly simple while still supporting powerful marketing analytics, SolydFlow consolidates all billing complexity into just **four specific events**. 
 
----
+### 1. `subscription_started`
+**When it fires:** A user successfully pays for an entitlement for the very first time, or they purchase it again after their previous subscription completely expired.
+**What to do:** Grant the user access to the `entitlement` until the `expires_at` date. *Tip: This is the perfect event to trigger a "Welcome to Premium" onboarding email!*
 
-### Example Event Payload
+```json
+{
+  "event": "subscription_started",
+  "event_id": "evt_110e8400-e29b-41d4-a716-446655440001",
+  "environment": "live",
+  "is_test": false,
+  "user_id": "user_12345",
+  "package_id": "gold_monthly",
+  "entitlement": "gold_access",
+  "provider": "paystack",
+  "expires_at": "2026-07-27T18:33:00Z"
+}
+```
+
+### 2. `subscription_renewed`
+**When it fires:** A user's *active* subscription is renewed, upgraded, or a dropped payment is rescued by the SolydFlow Sweeper. Time is added to their current access.
+**What to do:** Silently extend the user's access in your database to the new `expires_at` date. 
 
 ```json
 {
   "event": "subscription_renewed",
-  "customer_id": "user_12345",
-  "entitlement": "gold_access",
+  "event_id": "evt_550e8400-e29b-41d4-a716-446655440000",
+  "environment": "live",
+  "is_test": false,
+  "user_id": "user_12345",
   "package_id": "gold_monthly",
-  "expires_at": "2026-12-31T00:00:00Z"
+  "entitlement": "gold_access",
+  "provider": "paystack",
+  "expires_at": "2026-08-27T18:33:00Z"
+}
+```
+
+### 3. `subscription_revoked`
+**When it fires:** A user's access is forcefully killed before their natural expiration date (e.g., a card chargeback, an Apple refund, or a manual Admin rejection in the dashboard).
+**What to do:** Immediately revoke the user's access to the `entitlement` and pause their services.
+
+```json
+{
+  "event": "subscription_revoked",
+  "event_id": "evt_991f8400-e29b-41d4-a716-446655440001",
+  "environment": "live",
+  "is_test": false,
+  "user_id": "user_12345",
+  "package_id": "gold_monthly",
+  "entitlement": "gold_access",
+  "reason": "chargeback",
+  "revoked_at": "2026-06-27T18:33:00Z"
+}
+```
+
+### 4. `test_event`
+**When it fires:** You click "Send Test Webhook" in the SolydFlow Console API Vault.
+**What to do:** Use this to verify your HMAC SHA-256 cryptographic signature logic is working correctly before going live.
+
+```json
+{
+  "event": "test_event",
+  "user_id": "sf_test_user_999",
+  "package_id": "test_monthly_gold",
+  "entitlement": "gold_access",
+  "provider": "solydflow_test",
+  "expires_at": "2026-07-27T18:33:00Z"
 }
 ```
 
@@ -1611,14 +1662,14 @@ app.post('/webhook/solydflow', (req, res) => {
   }
 
   // Webhook verified
-  const event = req.body;
+  const payload = req.body;
 
   console.log(
     'Verified SolydFlow Event:',
-    event.event
+    payload.event
   );
 
-  switch (event.event) {
+  switch (payload.event) {
     case 'subscription_started':
       // Create subscription
       break;
@@ -1627,22 +1678,14 @@ app.post('/webhook/solydflow', (req, res) => {
       // Extend subscription
       break;
 
-    case 'subscription_upgraded':
-      // Update entitlement
-      break;
-
-    case 'subscription_cancelled':
+    case 'subscription_revoked':
       // Revoke access
-      break;
-
-    case 'entitlement_restored':
-      // Restore access
       break;
 
     default:
       console.log(
         'Unhandled event:',
-        event.event
+        payload.event
       );
   }
 
