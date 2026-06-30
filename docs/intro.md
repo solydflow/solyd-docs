@@ -124,7 +124,7 @@ Routing rules are configured from the SolydFlow Console and require no applicati
 ## Prerequisites
 
 *   A [SolydFlow Account](https://console.solydflow.com)
-*   A Flutter App
+*   A Flutter/Web App
 *   A Payment Gateway Account (Live or Test)
 
 ---
