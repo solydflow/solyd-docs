@@ -28,10 +28,10 @@ const config = {
 
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
-  organizationName: 'solydflow', // Usually your GitHub org/user name.
+  organizationName: 'SolydFlow', // Usually your GitHub org/user name.
   projectName: 'solyd-docs', // Usually your repo name.
 
-  onBrokenLinks: 'throw',
+  onBrokenLinks: 'ignore',
   deploymentBranch: 'gh-pages',
 
   // Even if you don't use internationalization, you can use this field to set
@@ -41,6 +41,11 @@ const config = {
     defaultLocale: 'en',
     locales: ['en'],
   },
+
+  // ADD THIS BLOCK:
+  clientModules: [
+    require.resolve('./src/analytics.js'),
+  ],
 
   presets: [
     [
@@ -83,24 +88,24 @@ const config = {
           src: 'img/logo.png',
         },
         items: [
-          {
-            type: 'docSidebar',
-            sidebarId: 'tutorialSidebar',
-            position: 'left',
-            label: 'Tutorial',
-            // to: '/intro',
-          },
+          // {
+          //   type: 'docSidebar',
+          //   sidebarId: 'tutorialSidebar',
+          //   position: 'left',
+          //   label: 'Tutorial',
+          //   // to: '/intro',
+          // },
           // {to: '/blog', label: 'Blog', position: 'left'},
           {
             href: 'https://www.linkedin.com/company/solydflow/',
             label: 'LinkedIn',
-            position: 'right',
+            position: 'left',
           },
         ],
       },
       footer: {
         style: 'dark',
-        links: [
+        // links: [
           // {
           //   title: 'Docs',
           //   items: [
@@ -140,7 +145,7 @@ const config = {
           //     },
           //   ],
           // },
-        ],
+        // ],
         copyright: `Copyright © ${new Date().getFullYear()} SolydFlow Inc.`,
       },
       prism: {

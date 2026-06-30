@@ -2,7 +2,7 @@
 
 > N.B: The documentation is still undergoing standardization, please report any issues you had while following the guide.
 
-SolydFlow is the revenue infrastructure for African mobile apps.
+SolydFlow is the revenue infrastructure for African mobile/web apps.
 
 It unifies app stores (Apple App Store and Google Play), local African payment gateways (Paystack and Flutterwave), and Stripe for global coverage and portability into a single API.
 
