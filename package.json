@@ -1,6 +1,6 @@
 {
-  "name": "solyd-docs",
-  "version": "0.0.0",
+  "name": "solydflow-docs",
+  "version": "0.1.0",
   "private": true,
   "scripts": {
     "docusaurus": "docusaurus",

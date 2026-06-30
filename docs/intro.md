@@ -1,3 +1,9 @@
+---
+id: intro
+title: SolydFlow Documentation Home
+slug: /
+---
+
 # Quick Start Integration Guide
 
 > N.B: The documentation is still undergoing standardization, please report any issues you had while following the guide.
