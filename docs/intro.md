@@ -649,9 +649,9 @@ user_12345
 
 ---
 
-#### `userPhone` (Recommended)
+#### `userPhone` and `userEmail` (Recommended)
 
-The user's phone number in international format.
+The user's phone number in international format and their email.
 
 Example:
 
@@ -659,12 +659,12 @@ Example:
 2348012345678
 ```
 
-Providing a phone number enables SolydFlow features such as:
+Providing a phone number and email enables SolydFlow features such as:
 
 * Subscription recovery campaigns
 * Churn prevention messaging
 * Customer re-engagement workflows
-* and local payment rails such as M-Pesa.
+* and local payment rails such as M-Pesa (related users).
 
 If a phone number is not available, M-Pesa can not be used, you can then pass empty string for the phone number field and SolydFlow will continue to function normally.
 
