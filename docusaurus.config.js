@@ -84,8 +84,9 @@ const config = {
       navbar: {
         title: 'SolydFlow',
         logo: {
-          alt: 'My Site Logo',
+          alt: 'SolydFlow Logo',
           src: 'img/logo.png',
+          href: 'https://solydflow.com'
         },
         items: [
           // {
