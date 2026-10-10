@@ -1,22 +1,3 @@
-### Review of `guides/marketplaces.md`
-
-#### Analysis
-* **What works well:** Identifying marketplace revenue drivers—such as seller subscriptions, listing promotions, and feature upgrades—lays the groundwork for multi-sided platforms.
-* **Areas to optimize & embellish (Applying the "Simplicity Wins" Standard):**
-  1. **Frontmatter:** Add proper Docusaurus frontmatter (`id`, `title`, `sidebar_label`).
-  2. **Glanceable Linear Flow:** Replace fragmented lists with a clean 4-step linear flow.
-  3. **The 3 Core Marketplace Monetization Models Table:** Detail how marketplace operators monetize their platforms:
-     * **Seller Subscriptions** (e.g. *Verified Merchant Pro* with unlimited product uploads).
-     * **Featured Listing Boosts** (e.g. 7-day front-page search highlight).
-     * **Contact / Lead Unlocking** (e.g. service marketplaces where artisans or contractors pay to view customer leads).
-  4. **The Split-Payment & Escrow Boundary:** Clarify that SolydFlow manages **platform revenue** (monetizing sellers, listing fees, subscriptions), while multi-party buyer-seller payouts flow through underlying gateway split features (Paystack Subaccounts / Stripe Connect).
-  5. **Concrete Code Snippet:** Provide a practical example of a vendor purchasing a 7-day listing bump.
-
----
-
-### Optimized & Embellished `guides/marketplaces.md`
-
-```markdown
 ---
 id: marketplaces
 title: Marketplaces & Classifieds Guide
