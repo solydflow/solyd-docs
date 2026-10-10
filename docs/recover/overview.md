@@ -1,639 +1,130 @@
-# Recover
+---
+id: overview
+title: Recover Overview
+sidebar_label: Overview
+---
 
-SolydFlow Recover is the recovery layer for payment transactions that do not complete cleanly.
+# Recover Overview
 
-Real-world payment systems are not always synchronous or predictable. A customer can complete a payment while your application misses the confirmation. A provider can temporarily fail to respond. A webhook can arrive late or not arrive at all. A transaction can remain pending even though the underlying payment has already changed state.
+**SolydFlow Recover** is the automated resilience engine designed to eliminate revenue leakage caused by network drops, dropped sockets, delayed USSD prompts, and missing gateway webhooks.
 
-Recover is designed to help applications resolve these situations without requiring developers to build provider-specific recovery logic themselves.
+In emerging markets, up to **18% of successful payments** fail to unlock customer access immediately because the mobile app closes or cellular data drops before the confirmation callback returns. Recover detects these stranded transactions, establishes truth, and enforces customer access automatically.
 
-```text id="8p4j6k"
-Customer
-    ↓
-Payment Provider
-    ↓
-   SolydFlow
-    ↓
-Transaction
-    ↓
-   Recover
-    ↓
-Resolved State
-    ↓
-Entitlement
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Customer
+    participant Gateway as Payment Provider (Paystack/M-Pesa)
+    participant App as Your Mobile App
+    participant Sweeper as SolydFlow Sweeper (Recover)
+    participant Ledger as Immutable Ledger
+
+    Customer->>Gateway: Submits Payment (Card debited / PIN confirmed)
+    Note over Customer,App: Cellular data disconnects / User force-closes app ❌
+    Gateway-->>App: Callback Fails (Socket disconnected)
+    
+    rect rgb(240, 248, 255)
+    Note over Sweeper,Gateway: SolydFlow Recover Activates
+    Sweeper->>Sweeper: Detects UNRESOLVED (>30s old)
+    Sweeper->>Gateway: Server-to-Server Direct Status Query
+    Gateway-->>Sweeper: Returns "Settled / Success"
+    Sweeper->>Ledger: Commit SETTLED_CONSENSUS
+    end
+
+    Note over Customer,App: Customer launches app 1 hour later (Offline or Online)
+    App->>Ledger: Sync Entitlements
+    Ledger-->>App: "pro_access" is ACTIVE ✅
 ```
 
 ---
 
-## Why Recovery Matters
+## The Settlement Gap Problem
 
-A successful payment does not always mean that every system involved immediately knows that the payment succeeded.
+Standard payment architectures assume a linear, uninterrupted connection:
 
-For example:
+```text
+[Ideal Flow]:
+Checkout ➔ Payment ➔ Webhook ➔ Entitlement Unlocked ✅
 
-```text id="7z3m2q"
-Customer
-   ↓
-Payment Provider
-   ↓
-Payment Successful
-   ↓
-Webhook
-   X
+[Emerging Market Reality]:
+Checkout ➔ Bank Debits User ➔ Cellular Timeout ➔ Missing Webhook ➔ User Locked Out ❌
 ```
 
-The provider may have completed the payment while your application is still waiting for confirmation.
+Without an automated recovery layer:
+1. The customer gets debited by their bank.
+2. Your app keeps features locked because no callback was received.
+3. The customer files a chargeback or angry support ticket, assuming they were scammed.
+4. You lose customer trust and incur support overhead.
 
-This can result in:
-
-```text id="4k8x1p"
-Provider
-└── Successful
-
-Application
-└── Pending
-```
-
-Without a recovery mechanism, the customer may have paid successfully but still not receive the entitlement they purchased.
-
-Recover exists to help close this gap.
+**SolydFlow Recover eliminates this gap.**
 
 ---
 
-## What Recover Does
+## The 5 Pillars of Recover
 
-Recover provides mechanisms for detecting and resolving transactions that have not reached a reliable final state.
-
-Depending on the situation, this can involve:
-
-* Detecting transactions that need attention
-* Retrying failed operations
-* Recovering transactions when webhooks are missing
-* Verifying provider-side transaction state
-* Resolving incomplete payment flows
-* Handling transactions that appear inconsistent
-* Updating the resulting entitlement
-
-Conceptually:
-
-```text id="5jv7wn"
-Unresolved Transaction
-        ↓
-     Detect
-        ↓
-     Recover
-        ↓
-    Verify
-        ↓
- Resolve State
-        ↓
-   Entitlement
-```
+| Pillar | Problem Solved | Mechanism |
+| :--- | :--- | :--- |
+| **[Transaction Recovery](./transaction-recovery.md)** | Pending transactions that stall mid-checkout. | Background re-querying across connected provider APIs. |
+| **[Orphaned Transactions](./orphaned-transactions.md)** | Payments completed at the bank while the app was killed. | The Sweeper Engine matches orphaned intents against bank logs. |
+| **[Failed Webhooks](./failed-webhooks.md)** | Dropped, timed-out, or blocked inbound gateway webhooks. | Direct REST verification with fallback polling. |
+| **[Retries & Jitter](./retries.md)** | Transient provider network timeouts (`504 Gateway Timeout`). | Exponential backoff with randomized jitter. |
+| **[Recovery Workflows](./recovery-workflows.md)** | Cross-device re-engagement for abandoned carts. | SMS, email, and WhatsApp recovery triggers. |
 
 ---
 
-## Recover Is Not a Payment Provider
+## How Recover Differs from Recharging
 
-Recover does not replace your payment providers.
+:::warning{title="Recovery Never Recharges the Customer"}
 
-Your providers remain responsible for processing the underlying payment.
+Recovery **never** submits a new charge attempt to a customer's card or triggers a second mobile money PIN prompt.
+:::
 
-```text id="9w2r6c"
-             SolydFlow
-                 │
-        ┌────────┴────────┐
-        ↓                 ↓
-   Payment Layer      Recover
-        ↓                 ↓
-Payment Provider    Recovery Logic
-```
-
-For example:
-
-```text id="1x6v4m"
-Your Application
-       ↓
-   SolydFlow
-       ↓
-Paystack / Flutterwave / Stripe /
-M-Pesa / Monnify / Apple / Google Play
-```
-
-Recover operates around those providers to make the application-facing transaction lifecycle more resilient.
+Instead, Recover verifies the **existing transaction reference**:
+* If the user was **already debited**, Recover verifies the settlement and unlocks access immediately.
+* If the user **cancelled or was declined**, Recover transitions the transaction state to `FAILED_DECLINED` so the user can cleanly retry.
 
 ---
 
-## The Problem Recover Solves
+## Real-World Example: The M-Pesa STK Delay
 
-Without a shared recovery layer, each application may need to implement logic for situations such as:
-
-```text id="0q9m3b"
-Payment initiated
-       ↓
-Provider processes payment
-       ↓
-Webhook fails
-       ↓
-Application remains pending
-       ↓
-Developer investigates
-       ↓
-Manual recovery
-```
-
-With SolydFlow:
-
-```text id="6c2w8n"
-Payment initiated
-       ↓
-Provider processes payment
-       ↓
-Expected event missing
-       ↓
-SolydFlow detects issue
-       ↓
-Recovery
-       ↓
-Verification
-       ↓
-Resolved transaction
-       ↓
-Entitlement
-```
-
-This moves recovery from application-specific code into the revenue infrastructure.
+1. A customer initiates an M-Pesa payment for a **KSh 500** subscription.
+2. Safaricom sends the SIM toolkit PIN prompt to their handset.
+3. The customer receives a phone call, minimizes your app, and enters their PIN 45 seconds later.
+4. The operating system kills your mobile app in the background to free memory.
+5. Safaricom settles the funds, but the app is closed.
+6. **SolydFlow Recover intercepts:** The Sweeper detects the open intent, queries Safaricom Daraja, records `SETTLED_CONSENSUS` in your cloud ledger, and caches `pro_access` so the user has full access the next time they open the app.
 
 ---
 
-## Common Recovery Scenarios
-
-Recover is designed around several common failure scenarios.
-
-### Failed Webhooks
-
-A provider completes a transaction but the expected webhook is not successfully delivered.
-
-```text id="4v7k2p"
-Provider
-   ↓
-Payment Successful
-   ↓
-Webhook
-   X
-   ↓
-SolydFlow
-   ↓
-Recovery
-```
-
-See:
-
-**[Failed Webhooks →](./failed-webhooks.md)**
-
----
-
-### Pending Transactions
-
-A transaction remains pending even though its underlying state may have changed.
-
-```text id="3n8x5q"
-Transaction
-   ↓
-Pending
-   ↓
-Provider State Changes
-   ↓
-Recovery / Verification
-   ↓
-Resolved
-```
-
-Recovery works together with transaction state handling to prevent transactions from remaining unresolved unnecessarily.
-
-See:
-
-**[Transaction Recovery →](./transaction-recovery.md)**
-
----
-
-### Zombie Transactions
-
-A zombie transaction is a transaction that remains in an unresolved application state even though there may be evidence that the underlying payment has progressed or completed.
-
-```text id="7p2m9x"
-Transaction
-   ↓
-Pending
-   ↓
-No Expected Progress
-   ↓
-Zombie Transaction
-   ↓
-Recovery
-   ↓
-Verification
-```
-
-See:
-
-**[Zombie Transactions →](./zombie-transactions.md)**
-
----
-
-### Failed Operations
-
-An operation involved in the payment lifecycle can fail temporarily.
-
-For example:
-
-```text id="6r4w1k"
-SolydFlow
-    ↓
-Provider Request
-    ↓
-Temporary Failure
-    ↓
-Retry
-    ↓
-Success
-```
-
-Retries can help recover from transient failures without requiring the customer to start the entire purchase again.
-
-See:
-
-**[Retries →](./retries.md)**
-
----
-
-## Recover and Transaction States
-
-Recovery works closely with the transaction lifecycle.
-
-A transaction can move through states such as:
-
-```text id="2m8q5v"
-Created
-  ↓
-Pending
-  ↓
-Processing
-  ↓
-Successful
-```
-
-But real-world failures can interrupt this flow:
-
-```text id="8x4k1n"
-Created
-  ↓
-Pending
-  ↓
-Webhook Missing
-  ↓
-Recovery
-  ↓
-Verification
-  ↓
-Successful
-```
-
-Recover should therefore be understood as a mechanism that helps transactions move toward a reliable state.
-
-See:
-
-**[Transaction States →](../concepts/transaction-states.md)**
-
----
-
-## Recover and Verification
-
-Recovery should not blindly assume that a payment succeeded.
-
-For example, if a webhook is missing:
-
-```text id="5q7m3z"
-Webhook Missing
-      ↓
-   Recovery
-      ↓
-Provider Verification
-      ↓
- ┌────┴────┐
- ↓         ↓
-Paid     Not Paid
- ↓         ↓
-Success   Failed
-```
-
-This distinction is important.
-
-A missing event does not necessarily mean that the payment succeeded, and a delayed response does not necessarily mean that it failed.
-
-Recovery therefore works together with verification to determine what actually happened.
-
-See:
-
-**[Transaction Verification →](../truth/transaction-verification.md)**
-
----
-
-## Recover and Entitlements
-
-The final goal of recovering a payment is not simply to change a transaction status.
-
-The transaction may determine whether the customer receives or retains access to a product or package.
-
-```text id="1v6n8c"
-Payment
-   ↓
-Transaction
-   ↓
-Recovery
-   ↓
-Verification
-   ↓
-Resolved State
-   ↓
-Entitlement
-   ↓
-Application Access
-```
-
-For example, if a customer's payment was successful but the application never received the confirmation, recovery can allow the transaction to be resolved and the appropriate entitlement to be granted.
-
-See:
-
-**[Entitlements →](../concepts/entitlements.md)**
-
----
-
-## Recover and Multiple Providers
-
-SolydFlow may connect multiple payment providers to the same application.
-
-Each provider can have different:
-
-* Payment flows
-* Event mechanisms
-* Failure modes
-* Transaction states
-* Response times
-* Recovery requirements
-
-Without an infrastructure layer, your application would need to understand these differences.
-
-Recover provides a common recovery model above the provider layer.
-
-```text id="9c4w7m"
-                  SolydFlow Recover
-                         │
-          ┌──────────────┼──────────────┐
-          ↓              ↓              ↓
-       Paystack       Flutterwave     Stripe
-          │              │              │
-          └──────────────┼──────────────┘
-                         ↓
-                   Recovery Layer
-```
-
-This allows your application to consume a consistent transaction lifecycle.
-
----
-
-## Recover and the Transaction Ledger
-
-Recovery can also affect the transaction record maintained by SolydFlow.
-
-For example:
-
-```text id="3k9p6x"
-Initial State
-└── Pending
-
-Recovery
-└── Provider Verification
-
-Updated State
-└── Successful
-
-Ledger
-└── Transaction Updated
-```
-
-This helps maintain a coherent history of what happened to the transaction.
-
-See:
-
-**[Transaction Ledger →](../truth/transaction-ledger.md)**
-
----
-
-## Recovery Does Not Mean Recharging the Customer
-
-Recovery should not be confused with automatically attempting another payment.
-
-For example:
-
-```text id="w5x8m2"
-Payment
-   ↓
-Provider
-   ↓
-Confirmation Missing
-```
-
-The correct response may be to verify the existing transaction rather than initiate another charge.
-
-```text id="7n4q9p"
-Existing Transaction
-       ↓
-    Verify
-       ↓
- ┌─────┴─────┐
- ↓           ↓
-Paid       Not Paid
- ↓           ↓
-Resolve     Handle Failure
-```
-
-This is especially important when a customer may already have been charged.
-
----
-
-## Recovery Workflows
-
-Recovery can involve several mechanisms working together.
-
-A simplified workflow is:
-
-```text id="2q7m4x"
-Transaction Created
-       ↓
-Payment Processing
-       ↓
-Provider Response
-       ↓
- ┌─────┴─────┐
- ↓           ↓
-Success    Uncertain
- ↓           ↓
-Resolve    Recover
-             ↓
-          Verify
-             ↓
-       ┌─────┴─────┐
-       ↓           ↓
-    Success      Failed
-       ↓           ↓
-    Resolve     Resolve
-```
-
-More advanced recovery workflows can combine retries, event recovery, transaction verification, and state reconciliation.
-
-See:
-
-**[Recovery Workflows →](./recovery-workflows.md)**
-
----
-
-## Recover and SolydFlow Truth
-
-Recover and Truth have different responsibilities.
-
-**Recover** focuses on getting an unresolved transaction back into a reliable state.
-
-**Truth** focuses on determining and maintaining the authoritative state of the transaction.
-
-Conceptually:
-
-```text id="6m3v8q"
-             Transaction
-                  ↓
-        ┌─────────┴─────────┐
-        ↓                   ↓
-      Recover              Truth
-        ↓                   ↓
- Resolve Issue       Determine State
-        └─────────┬─────────┘
-                  ↓
-          Reliable Transaction
-```
-
-This separation allows recovery mechanisms to work together with SolydFlow's transaction verification, consensus, ledger, and reconciliation capabilities.
-
----
-
-## Recover and Enforce
-
-Recover resolves payment uncertainty.
-
-Enforce uses reliable transaction and entitlement state to ensure that application access follows the configured rules.
-
-```text id="8k5m2v"
-Payment
-   ↓
-Recover
-   ↓
-Truth
-   ↓
-Transaction State
-   ↓
-Entitlement
-   ↓
-Enforce
-   ↓
-Application Access
-```
-
-This creates a broader revenue infrastructure flow:
-
-```text id="4x9q7n"
-Payment
-   ↓
-Recover
-   ↓
-Truth
-   ↓
-Entitlement
-   ↓
-Enforce
-   ↓
-Access
-```
-
----
-
-## Designing for Failure
-
-SolydFlow assumes that payment failures are not exceptional edge cases.
-
-They are part of the normal operating environment of distributed payment systems.
-
-Your application should therefore be prepared for:
-
-```text id="3v6k1m"
-✓ Delayed responses
-✓ Missing events
-✓ Duplicate events
-✓ Temporary provider failures
-✓ Pending transactions
-✓ State mismatches
-✓ Interrupted payment flows
-✓ Provider outages
-```
-
-Recover provides infrastructure for handling these conditions without forcing every application to build the same mechanisms independently.
-
----
-
-## Recommended Application Architecture
-
-Your application should generally rely on SolydFlow for the payment transaction lifecycle rather than attempting to determine payment success solely from client-side behavior.
-
-```text id="7m2x8q"
-                    Your Application
-                           │
-                           ↓
-                       SolydFlow
-                           │
-             ┌─────────────┼─────────────┐
-             ↓             ↓             ↓
-          Payment        Recover        Truth
-             │             │             │
-             └─────────────┼─────────────┘
-                           ↓
-                      Transaction
-                           ↓
-                       Entitlement
-                           ↓
-                          Access
-```
-
-This architecture allows payment processing, recovery, transaction verification, and entitlement management to remain centralized.
-
----
-
-## Key Principle
-
-> **A payment is not truly resolved simply because a payment request was sent or a single event was received.**
-
-Recover helps SolydFlow deal with the gap between what should have happened and what the application currently knows.
-
-```text id="1q8m4v"
-What happened?
-      ↓
-What does the application know?
-      ↓
-     Recover
-      ↓
-   Verification
-      ↓
-Reliable State
-      ↓
-Entitlement
-```
-
-The objective is simple:
-
-**Help customers receive what they paid for, while giving developers a reliable way to handle payment failures and uncertainty.**
-
+## Explore Recover Documentation
+
+<div className="row">
+  <div className="col col--6">
+    <div className="card padding--md margin-bottom--md">
+      <h3>🔄 Transaction Recovery</h3>
+      <p>How SolydFlow resolves stalled payments and reconciles pending intents.</p>
+      <a className="button button--secondary button--block" href="/recover/transaction-recovery">Read Guide →</a>
+    </div>
+  </div>
+  <div className="col col--6">
+    <div className="card padding--md margin-bottom--md">
+      <h3>🧟 Orphaned Transactions</h3>
+      <p>Learn how the Sweeper Engine revives orphaned payments.</p>
+      <a className="button button--secondary button--block" href="/recover/orphaned-transactions">Read Guide →</a>
+    </div>
+  </div>
+  <div className="col col--6">
+    <div className="card padding--md margin-bottom--md">
+      <h3>📬 Failed Webhooks</h3>
+      <p>Handling dropped gateway notifications without losing revenue.</p>
+      <a className="button button--secondary button--block" href="/recover/failed-webhooks">Read Guide →</a>
+    </div>
+  </div>
+  <div className="col col--6">
+    <div className="card padding--md margin-bottom--md">
+      <h3>🔁 Retries & Backoff</h3>
+      <p>Exponential backoff strategies for provider API rate limits and timeouts.</p>
+      <a className="button button--secondary button--block" href="/recover/retries">Read Guide →</a>
+    </div>
+  </div>
+</div>

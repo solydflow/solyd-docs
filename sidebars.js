@@ -120,7 +120,7 @@ const sidebars = {
       items: [
         'recover/overview',
         'recover/transaction-recovery',
-        'recover/zombie-transactions',
+        'recover/orphaned-transactions',
         'recover/failed-webhooks',
         'recover/retries',
         'recover/recovery-workflows',

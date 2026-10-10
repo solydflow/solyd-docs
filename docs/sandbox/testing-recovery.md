@@ -1,92 +1,109 @@
-# Testing Recovery
+---
+id: testing-recovery
+title: Testing Recovery Workflows
+sidebar_label: Testing Recovery
+---
 
-Use the Solyd Simulator together with the Test environment to verify how a completed payment is reflected in the customer's transaction and entitlement state.
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
 
-Recovery testing is particularly important when testing payment flows where the application does not immediately receive the final payment result.
+# Testing Recovery Workflows
 
-## Test Environment
-
-Run recovery tests in:
-
-**Test (Sandbox)**
-
-Do not use Live mode for recovery testing unless you intentionally need to test the live recovery path with real money.
-
-## Recovery Flow
-
-A recovery test should verify that a payment that has completed at the provider is eventually reflected correctly in SolydFlow.
-
-The expected flow is:
+Recovery testing validates that SolydFlow automatically rescues transactions when real-world failures occur—such as a customer completing payment and then losing mobile connectivity, closing the browser, or having a webhook blocked.
 
 ```text
-Checkout
-   ↓
-Payment Provider
-   ↓
-Payment Completed
-   ↓
-SolydFlow Processes Result
-   ↓
-Transaction Updated
-   ↓
-Entitlement Updated
-   ↓
-Test Environment
+[1. Complete Test Payment] ➔ [2. Kill App / Drop Socket] ➔ [3. Sweeper Reconciles in Background] ➔ [4. Entitlement Restored]
 ```
 
-## Verify the Result
+---
 
-After completing the test payment, verify the resulting data in the project's Test environment.
+## Test 1: The "Force-Close" Test (Mobile App)
 
-Check:
+This test proves that customers who pay via USSD, Bank Transfer, or M-Pesa but lose cellular data still get their pro access restored automatically.
 
-* The transaction exists.
-* The transaction has the expected state.
-* The package is associated with the transaction.
-* The customer's entitlement reflects the successful purchase.
+### Test Steps:
+1. Launch your mobile app in debug/test mode (`sf_pk_test_...`).
+2. Trigger the paywall and select a package (e.g. `pro_monthly_ngn`).
+3. Complete the payment authorization using a test card or simulator PIN.
+4. **Immediately force-close / swipe away the app** before the success screen appears.
+5. Wait **15 to 30 seconds** for the gateway settlement to register.
+6. Re-open your mobile app.
+7. Verify that access was restored automatically without prompting the user to pay again:
 
-## Routing Visibility
+<Tabs>
+<TabItem value="flutter" label="Flutter" default>
 
-The routing engine log provides visibility into the beginning of the transaction flow.
+```dart title="lib/screens/dashboard.dart"
+// On app launch, hasEntitlement reads from encrypted local storage
+// and checks if the Sweeper settled the orphaned transaction.
+final bool isPro = await SolydFlow.hasEntitlement("pro_access");
+print("Restored Access: $isPro"); // Expected: true ✅
+```
 
-For example:
+</TabItem>
+<TabItem value="javascript" label="JavaScript / TypeScript (Web)">
+
+```typescript title="src/access.ts"
+const isPro = await SolydFlow.hasEntitlement("pro_access");
+console.log("Restored Access:", isPro); // Expected: true ✅
+```
+
+</TabItem>
+</Tabs>
+
+---
+
+## Test 2: The "Blocked Webhook" Test (Backend / Web)
+
+This test proves that SolydFlow's **Consensus Engine** does not depend solely on webhooks to unlock subscriptions.
+
+### Test Steps:
+1. In the **SolydFlow Console**, go to **Inbound Gateway Webhooks**.
+2. Temporarily enter an invalid webhook URL (e.g. `https://httpstat.us/500`) to simulate a complete webhook delivery outage.
+3. Open the **Solyd Simulator** in `Test (Sandbox)` mode.
+4. Select a package and complete checkout using a test card.
+5. In your gateway dashboard, the webhook will show as failed (`500 Internal Error`).
+6. **Watch the SolydFlow Simulator Log:**
+   * After 45 seconds of webhook silence, the **Sweeper** detects the `UNRESOLVED_ORPHAN` transaction.
+   * The Sweeper queries the gateway's REST API directly using your Vault secret key.
+   * The transaction settles to **`SETTLED_CONSENSUS`**.
+   * Entitlement `pro_access` unlocks cleanly.
+7. Re-enable your valid webhook URL once the test is complete.
+
+---
+
+## What the Ledger Looks Like During Recovery
+
+When a recovery test succeeds, inspect the transaction in **SolydFlow Console → Transactions Ledger**. You will see the complete audit trail:
 
 ```text
-INITIATED: Checkout requested for starter (NGN 300)
-ROUTER DECISION: Smart Routing selected [PAYSTACK]
-ACTION: Redirecting to https://checkout.paystack.com/...
+┌───────────────────────────────────────┬────────────────────────────────────────────────────────┐
+│ Timestamp                             │ State Transition & Operational Source                  │
+├───────────────────────────────────────┼────────────────────────────────────────────────────────┤
+│ **10:00:00**                          │ `INITIALIZED` (Client started checkout)                │
+├───────────────────────────────────────┼────────────────────────────────────────────────────────┤
+│ **10:00:45**                          │ `UNRESOLVED_ORPHAN` (Callback missing after 45s)       │
+├───────────────────────────────────────┼────────────────────────────────────────────────────────┤
+│ **10:01:00**                          │ `RECOVERING` (Sweeper queried gateway verify API)      │
+├───────────────────────────────────────┼────────────────────────────────────────────────────────┤
+│ **10:01:02**                          │ `SETTLED_CONSENSUS` (Entitlement "pro_access" granted) │
+└───────────────────────────────────────┴────────────────────────────────────────────────────────┘
 ```
 
-Use the transaction and customer data in the Test environment to verify the resulting state after checkout.
+---
 
-## Recovery Testing and Provider Behavior
+## What a Successful Recovery Test Proves
 
-The exact recovery behavior depends on the payment flow and the configured provider.
+Passing these tests confirms that:
+* ✅ Network drops never lead to lost customer revenue.
+* ✅ Dropped or blocked webhooks are recovered automatically via direct REST verification.
+* ✅ Subscribers never have to contact support or pay twice for the same subscription.
 
-For provider-specific or SolydFlow recovery scenarios, see:
-
-[Transaction Recovery →](../recover/transaction-recovery.md)
-
-[Zombie Transactions →](../recover/zombie-transactions.md)
-
-[Failed Webhooks →](../recover/failed-webhooks.md)
-
-[Retries →](../recover/retries.md)
+---
 
 ## Related Documentation
 
-[Sandbox Overview →](./overview.md)
-
-[Test Transactions →](./test-transactions.md)
-
-[Simulate Failures →](./simulate-failures.md)
-
-[Transaction Recovery →](../recover/transaction-recovery.md)
-
-[Zombie Transactions →](../recover/zombie-transactions.md)
-
-[Failed Webhooks →](../recover/failed-webhooks.md)
-
-[Entitlements →](../concepts/entitlements.md)
-
-[Transactions →](../concepts/transactions.md)
+* **[Sandbox Overview →](./overview.md)**
+* **[Simulating Payment Failures →](./simulate-failures.md)**
+* **[Orphaned Transactions →](../recover/orphaned-transactions.md)**
+* **[Truth & Consensus Engine →](../truth/consensus-engine.md)**

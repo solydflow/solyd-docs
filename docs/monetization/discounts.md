@@ -1,219 +1,200 @@
-# Discounts
-
-SolydFlow supports automatic upgrade discounts through **Smart Credits**.
-
-Instead of requiring developers to create promo codes or manually calculate discounts, SolydFlow automatically applies credit when a customer upgrades from a lower-tier package to a higher-tier package.
-
+---
+id: discounts
+title: Discounts & Smart Upgrade Credits
+sidebar_label: Discounts
 ---
 
-## How Upgrade Credits Work
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
 
-Each package has a **Tier Level**.
+# Discounts & Smart Upgrade Credits
 
-For example:
+SolydFlow automates subscription discounts through **Smart Upgrade Credits**. 
 
-```text
-Starter
-Tier Level: 1
+Instead of requiring customers to hunt for coupon codes or forcing developers to build complex pro-ration engines, SolydFlow dynamically calculates the unused monetary value of an active subscription and deducts it as instant credit when upgrading to a higher tier.
 
-Pro
-Tier Level: 2
-
-Business
-Tier Level: 3
-```
-
-When a customer upgrades, SolydFlow checks whether the new package has a higher tier than their current package.
-
-```text
-Starter
-Tier 1
-   ↓
-Pro
-Tier 2
-   ↓
-Upgrade Credit
-```
-
-If the customer is eligible, SolydFlow calculates the unused value of their current package and applies it toward the upgrade.
-
----
-
-## Upgrade Eligibility
-
-An upgrade credit is applied when:
-
-* The customer has an active package.
-* The new package has a higher `TierLevel`.
-* Both packages use the same currency.
-* The existing package still has unused time.
-
-For example:
-
-```text
-Current Package
-Starter
-Tier 1
-₦10,000
-   ↓
-New Package
-Pro
-Tier 2
-₦20,000
-```
-
-If the customer still has unused time on Starter, SolydFlow can apply the corresponding unused value as credit toward Pro.
-
----
-
-## How the Credit Is Calculated
-
-The credit is based on the unused portion of the customer's current package.
-
-Conceptually:
-
-```text
-Unused Credit =
-(Remaining Days / Total Cycle Days)
-× Amount Paid
-```
-
-The credit is then deducted from the new package's price.
-
-```text
-New Package Price
-        ↓
-   − Upgrade Credit
-        ↓
-Amount Customer Pays
+```mermaid
+flowchart LR
+    A["Customer on Starter Tier (₦10,000 / mo)"] -->|Day 10 of 30: 20 Days Left| B["Unused Credit: ₦6,666.67"]
+    B --> C["Upgrades to Pro Tier (₦20,000 / mo)"]
+    C --> D["Net Charged at Checkout: ₦13,333.33"]
 ```
 
 ---
 
-## Example
+## How Smart Upgrade Credits Work
 
-A customer paid **₦10,000** for a 30-day Starter package.
+Every Product/Package in SolydFlow is assigned a **Tier Level** (e.g., Free = 0, Starter = 1, Pro = 2, Business = 3).
 
-They upgrade after 10 days, leaving 20 days unused.
-
-```text
-Remaining Value
-
-20 / 30 × ₦10,000
-= ₦6,666.67
-```
-
-If the Pro package costs ₦20,000:
-
-```text
-Pro Price       ₦20,000
-Upgrade Credit  −₦6,666.67
-───────────────────────
-Amount Due      ₦13,333.33
-```
-
-The exact amount is calculated by SolydFlow.
+When an authenticated user views your paywall:
+1. SolydFlow detects if the customer has an active subscription at a lower `tier_level`.
+2. The engine computes the remaining days in their current billing cycle.
+3. If upgrading to a higher `tier_level` in the same currency, SolydFlow sets `pkg.isUpgrade = true` and populates `pkg.calculatedAmountMinor` with the discounted price.
 
 ---
 
-## No Manual Discount Configuration
-
-You do not need to create promo codes such as:
+## Pro-Rating Calculation Formula
 
 ```text
-SAVE20
-UPGRADE10
-WELCOME15
+Unused Credit = (Remaining Days in Cycle / Total Days in Cycle) × Base Amount Paid
+
+Net Amount Due = New Package Price − Unused Credit
 ```
 
-Upgrade credits are automatically calculated from the customer's existing package.
+### Real-World Example:
+* **Current Plan:** *Starter Monthly* (₦10,000 paid for 30 days).
+* **Upgrade Date:** Day 10 (20 days remaining).
+* **Unused Credit Calculation:** `(20 / 30) × ₦10,000` = **₦6,666.67**
+* **New Plan Price:** *Pro Monthly* = **₦20,000.00**
+* **Final Checkout Charge:** `₦20,000 − ₦6,666.67` = **₦13,333.33**
 
-To enable the upgrade hierarchy, configure the appropriate **Tier Level** for each package.
+---
 
-```text
-Starter  → 1
-Pro      → 2
-Business → 3
+## Displaying Upgrade Discounts in Code
+
+<Tabs>
+<TabItem value="flutter" label="Flutter (Strikethrough Price & Credit Badge)" default>
+
+```dart title="lib/widgets/upgrade_package_card.dart"
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:solydflow_flutter/solydflow_flutter.dart';
+
+class UpgradePackageCard extends StatelessWidget {
+  final SolydPackage package;
+  final VoidCallback onSelect;
+
+  const UpgradePackageCard({
+    super.key,
+    required this.package,
+    required this.onSelect,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final currencyFormatter = NumberFormat.simpleCurrency(name: package.currency);
+    
+    // Original full price
+    final double fullPrice = package.amountMinor;
+    
+    // Net price after automatic upgrade credit
+    final double netPrice = (package.isUpgrade ? package.calculatedAmountMinor : package.amountMinor);
+
+    return Card(
+      elevation: 2,
+      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(package.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                if (package.isUpgrade)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.green.shade100,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: const Text("UPGRADE CREDIT APPLIED", style: TextStyle(color: Colors.green, fontSize: 10, fontWeight: FontWeight.bold)),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            if (package.isUpgrade) ...[
+              Text(
+                currencyFormatter.format(fullPrice),
+                style: const TextStyle(decoration: TextDecoration.lineThrough, color: Colors.grey, fontSize: 14),
+              ),
+            ],
+            Text(
+              "${currencyFormatter.format(netPrice)} / ${package.duration}",
+              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: onSelect,
+                child: Text(package.isUpgrade ? "Upgrade Now" : "Subscribe"),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+```
+
+</TabItem>
+<TabItem value="javascript" label="JavaScript / TypeScript (Web)">
+
+```typescript title="src/components/UpgradeCard.ts"
+import { SolydPackage } from "solydflow-js";
+
+export function renderPackagePricingHTML(pkg: SolydPackage): string {
+  const original = pkg.amount_minor;
+  const net = (pkg.is_upgrade ? pkg.calculated_amount_minor : pkg.amount_minor);
+
+  if (pkg.is_upgrade) {
+    const savings = (original - net).toFixed(2);
+    return `
+      <div class="pricing-tier upgrade-active">
+        <span class="badge">PRO-RATED UPGRADE CREDIT</span>
+        <span class="strikethrough">${pkg.currency} ${original.toFixed(2)}</span>
+        <h3>${pkg.currency} ${net.toFixed(2)} / ${pkg.duration}</h3>
+        <p class="savings-note">You save ${pkg.currency} ${savings} from your active plan balance.</p>
+      </div>
+    `;
+  }
+
+  return `
+    <div class="pricing-tier">
+      <h3>${pkg.currency} ${original.toFixed(2)} / ${pkg.duration}</h3>
+    </div>
+  `;
+}
+```
+
+</TabItem>
+</Tabs>
+
+---
+
+## Accounting & Ledger Auditability
+
+All applied credits are recorded in the Immutable Ledger to ensure accurate financial reporting:
+
+```json title="Ledger Entry with Smart Credit (JSON)"
+{
+  "transaction_id": "txn_01J8K9B2D7E4F1A0C5E8",
+  "user_id": "usr_supabase_991823",
+  "package_id": "pro_monthly_ngn",
+  "pricing": {
+    "currency": "NGN",
+    "original_amount_minor": 2000000,
+    "upgrade_credit_minor": 666667,
+    "final_charged_minor": 1333333,
+    "human_readable_charged": "₦13,333.33"
+  },
+  "metadata": {
+    "upgrade_from_package": "starter_monthly_ngn",
+    "previous_tier_level": 1,
+    "new_tier_level": 2,
+    "unused_days_credited": 20
+  }
+}
 ```
 
 ---
 
-## How It Appears to Customers
+## Related Documentation
 
-When an upgrade credit applies, SolydFlow can present the original and discounted amounts:
-
-```text
-Pro
-
-₦20,000
-────────
-₦13,333
-
-UPGRADE CREDIT APPLIED
-
-[Upgrade]
-```
-
-The customer pays the calculated amount.
-
----
-
-## Accounting
-
-The original price and applied credit are retained as part of the transaction record.
-
-Conceptually:
-
-```text
-Original Amount
-        ↓
-Upgrade Credit
-        ↓
-Final Amount
-```
-
-This allows the discount to remain traceable for revenue reporting and reconciliation.
-
----
-
-## Tier Levels
-
-Tier Levels determine the upgrade hierarchy.
-
-For example:
-
-```text
-Tier 1 → Starter
-Tier 2 → Pro
-Tier 3 → Business
-```
-
-A customer moving from Tier 1 to Tier 2 can qualify for an upgrade credit.
-
-A customer moving from Tier 2 to Tier 3 can also qualify.
-
-The tier structure is configured on your packages in the **Pricing** section.
-
----
-
-## Key Principle
-
-> **SolydFlow automatically applies the unused value of an active lower-tier package when a customer upgrades to a higher-tier package.**
-
-Developers only need to maintain the correct package hierarchy using **Tier Levels**.
-
----
-
-<!-- ## Next Steps
-
-Learn how to change package prices:
-
-**[Changing Pricing →](./changing-pricing.md)**
-
-Learn how regional prices work:
-
-**[Regional Pricing →](./regional-pricing.md)**
-
-Learn how products and packages are structured:
-
-**[Products and Packages →](./products-and-packages.md)** -->
+* **[Products & Packages Architecture →](./products-and-packages.md)**
+* **[Regional Pricing & Localization →](./regional-pricing.md)**
+* **[Changing Pricing Safely →](./changing-pricing.md)**
+* **[Transaction Ledger Architecture →](../truth/transaction-ledger.md)**

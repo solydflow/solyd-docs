@@ -1,365 +1,122 @@
-# Transactions
+---
+id: transactions
+title: Transactions & Financial Ledger
+sidebar_label: Transactions
+---
 
-A **transaction** represents a customer's attempt to purchase a package.
+# Transactions & Financial Ledger
 
-It records the financial journey of that purchase—from initiation to its final outcome—and serves as the foundation for recovery, verification, and entitlement management.
+In SolydFlow, a **Transaction** represents the complete financial journey of a purchase attempt. 
 
-```text
-Customer
-    ↓
-Package
-    ↓
-Purchase
-    ↓
-Transaction
-    ↓
-Revenue Outcome
-    ↓
-Entitlement
+Unlike a simple gateway callback, a SolydFlow Transaction is an immutable audit record tracking every state change—from initial checkout intent and gateway routing, through server-to-server consensus verification, to final entitlement enforcement.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Customer
+    participant App as Your App
+    participant SF as SolydFlow
+    participant Provider as Payment Provider
+
+    Customer->>App: Chooses Pro Monthly
+    App->>SF: Start purchase
+    SF->>Provider: Initialize payment
+    Provider-->>Customer: Payment prompt
+    Customer->>Provider: Authorizes payment
+
+    Provider-->>SF: Payment notification
+    SF->>Provider: Verify payment
+    SF->>SF: Update transaction and entitlement
+
+    SF-->>App: Return updated customer access
+    App-->>Customer: Unlock Pro features
 ```
-
-Unlike a simple payment response, a transaction captures the complete lifecycle of a purchase.
 
 ---
 
-## Why Transactions Matter
+## Transaction Record Schema
 
-Payment providers don't always return an immediate or reliable final result.
+Every transaction record written to your project's Immutable Ledger contains detailed audit metadata:
 
-Real-world payment flows can involve:
-
-* Network interruptions
-* Delayed provider responses
-* Missing callbacks
-* Duplicate webhooks
-* Pending payments
-* Customer abandonment
-
-For example:
-
-```text
-Customer
-    ↓
-Starts Payment
-    ↓
-Payment Completes
-    ↓
-Network Interruption
-    ↓
-No Callback Received
-```
-
-Your application might assume the payment failed, even though the provider recorded it as successful.
-
-SolydFlow tracks the transaction independently so it can determine the correct outcome.
-
----
-
-## Transaction Lifecycle
-
-Every transaction progresses through a lifecycle.
-
-```text
-Purchase Initiated
-        ↓
-Payment Processing
-        ↓
-Transaction Recorded
-        ↓
-Recover
-        ↓
-Truth
-        ↓
-Enforce
-        ↓
-Final Revenue Outcome
-```
-
-The exact states depend on the payment provider, but the principle remains the same:
-
-> **A payment response is not always the final financial outcome.**
-
----
-
-## Transaction States
-
-During its lifecycle, a transaction may move through several states.
-
-For example:
-
-```text
-Pending
-    ↓
-Successful
-```
-
-or
-
-```text
-Pending
-    ↓
-Failed
-```
-
-or
-
-```text
-Pending
-    ↓
-Interrupted
-    ↓
-Recovered
-    ↓
-Successful
-```
-
-Your application should rely on the transaction state provided by SolydFlow rather than interpreting provider-specific responses.
-
----
-
-## Transactions and Packages
-
-Every transaction belongs to a package.
-
-The package determines details such as:
-
-* Product
-* Price
-* Currency
-* Billing model
-
-For example:
-
-```text
-Product
-└── Pro Plan
-    └── Monthly (₦10,000)
-            ↓
-       Transaction
-```
-
-This allows SolydFlow to associate every financial event with the exact offering the customer attempted to purchase.
-
----
-
-## Transactions and Entitlements
-
-Transactions and entitlements serve different purposes.
-
-| Transaction                | Entitlement                   |
-| -------------------------- | ----------------------------- |
-| What happened financially? | What can the customer access? |
-
-Example:
-
-```text
-Successful Transaction
-          ↓
-     pro_access
-          ↓
- Application Access
-```
-
-Your application should check entitlements instead of payment responses.
-
-```javascript
-const hasAccess = await SolydFlow.hasEntitlement("pro_access");
-
-if (hasAccess) {
-    unlockProFeatures();
+```json title="Transaction Object (JSON)"
+{
+  "transaction_id": "txn_01J8K9B2D7E4F1A0C5E8",
+  "project_id": "proj_apex_production",
+  "user_id": "usr_supabase_991823",
+  "package_id": "pro_monthly_ngn",
+  "entitlement": "pro_access",
+  "pricing": {
+    "currency": "NGN",
+    "amount_minor": 500000,
+    "human_readable": "₦5,000.00",
+    "is_upgrade": false
+  },
+  "provider": {
+    "rail": "paystack",
+    "provider_reference": "ref_pstk_89283ab71928",
+    "channel": "card",
+    "last4": "4081"
+  },
+  "state": "SETTLED_CONSENSUS",
+  "lifecycle": {
+    "initialized_at": "2026-08-27T10:14:20Z",
+    "verified_at": "2026-08-27T10:14:35Z",
+    "expires_at": "2026-09-27T10:14:35Z"
+  },
+  "metadata": {
+    "ip_country": "NG",
+    "app_version": "2.4.0",
+    "platform": "flutter_android"
+  }
 }
 ```
 
 ---
 
-## Transactions and Payment Providers
+## Why Transactions Require Independent Tracking
 
-A transaction can be processed by any provider connected to your project.
+Emerging market payment flows are prone to edge cases that break standard architectures:
 
 ```text
-                SolydFlow
-                    │
-            Transaction Layer
-                    │
-     ┌──────────────┼──────────────┐
-     ↓              ↓              ↓
- Paystack     Flutterwave      Stripe
+┌───────────────────────────────────────┬──────────────────────────────────────────┐
+│ Real-World Edge Case                  │ How SolydFlow Handles It                 │
+├───────────────────────────────────────┼──────────────────────────────────────────┤
+│ Customer closes app before redirect   │ Sweeper matches intent with provider logs│
+├───────────────────────────────────────┼──────────────────────────────────────────┤
+│ Delayed M-Pesa STK push (2 mins late) │ Consensus engine verifies asynchronous callback │
+├───────────────────────────────────────┼──────────────────────────────────────────┤
+│ Gateway retries duplicate webhooks    │ Strict idempotency on transaction_id     │
+├───────────────────────────────────────┼──────────────────────────────────────────┤
+│ Fraudulent/spoofed client callbacks   │ Zero trust in client; direct API check   │
+└───────────────────────────────────────┴──────────────────────────────────────────┘
 ```
-
-Each provider has its own APIs and payment states.
-
-SolydFlow provides a consistent transaction model across all supported providers.
 
 ---
 
-## Interrupted Payment Flows
+## Strict Idempotency & Replay Defense
 
-Interrupted payment flows are common, especially on unreliable networks.
+Payment gateways frequently deliver duplicate webhooks when acknowledging network timeouts. SolydFlow enforces cryptographic idempotency:
 
-For example:
-
-```text
-Payment Started
-        ↓
-Payment Completed
-        ↓
-Callback Lost
-```
-
-Instead of assuming failure, SolydFlow can:
-
-```text
-Recover
-     ↓
-Verify
-     ↓
-Determine Truth
-     ↓
-Apply Outcome
-```
-
-This helps prevent customers from losing access because of incomplete payment flows.
+1. **Unique Intent Matching:** Every checkout generates a deterministic `transaction_id`.
+2. **Atomic Ledger Commits:** If a gateway sends five identical `charge.success` events for the same payment reference, the Consensus Engine processes the first and acknowledges subsequent duplicates as `NOOP` (No Operation).
+3. **Zero Double-Crediting:** Customers are never granted duplicate entitlement durations or double-charged for consumable packs.
 
 ---
 
-## Transaction Identity
+## Transaction Lookup & Reconciliation
 
-Every transaction has a unique identifier.
+When investigating billing disputes or verifying account upgrades, search the **SolydFlow Console → Transactions Ledger** using any of the following keys:
 
-For example:
-
-```text
-txn_01H...
-```
-
-Use this identifier when:
-
-* Looking up a transaction
-* Troubleshooting payments
-* Contacting support
-* Reconciling financial records
+* **SolydFlow Transaction ID:** `txn_01J8K...`
+* **Internal User ID:** `usr_supabase_991823`
+* **Gateway Reference:** `ref_pstk_89283...` or Stripe `pi_3Mzx...`
+* **Customer Email / Phone:** `customer@example.com` / `+2348012345678`
 
 ---
 
-## Transaction Events
+## Related Documentation
 
-Transactions generate events as they progress.
-
-For example:
-
-```text
-Transaction Created
-        ↓
-Payment Updated
-        ↓
-Verified
-        ↓
-Revenue Applied
-```
-
-Your application can respond to these events through the SolydFlow SDK or webhooks.
-
----
-
-## Reconciliation
-
-Sometimes your application and the payment provider disagree about a payment's status.
-
-For example:
-
-```text
-Application
-Pending
-
-Provider
-Successful
-```
-
-SolydFlow reconciles these differences to establish the correct transaction state before updating customer access.
-
----
-
-## Idempotency
-
-Payment providers may send the same event multiple times.
-
-```text
-Payment Success
-      ↓
-Webhook
-      ↓
-Retry
-      ↓
-Retry
-```
-
-SolydFlow treats these as updates to the same transaction rather than creating duplicate payments.
-
----
-
-## Don't Build Your Own Transaction State Machine
-
-Without a centralized revenue layer, applications often implement separate logic for:
-
-* Every payment provider
-* Webhook retries
-* Recovery
-* Reconciliation
-* Subscription updates
-* Entitlements
-
-SolydFlow centralizes this complexity.
-
-```text
-Your Application
-        ↓
-    SolydFlow
-        ↓
-Recover → Truth → Enforce
-        ↓
-Payment Providers
-```
-
-Your application can focus on delivering features instead of managing payment edge cases.
-
----
-
-## Key Principle
-
-A transaction is more than a payment response.
-
-It represents the complete financial lifecycle of a purchase.
-
-```text
-Purchase
-    ↓
-Processing
-    ↓
-Recover
-    ↓
-Truth
-    ↓
-Enforce
-    ↓
-Revenue Outcome
-    ↓
-Entitlement
-```
-
-SolydFlow ensures every transaction reaches the correct revenue outcome, even when payment flows are delayed, interrupted, or inconsistent.
-
----
-
-<!-- ## Related Contents
-
-Learn how SolydFlow structures commercial offerings and pricing:
-
-**[Monetization Overview →](../monetization/overview.md)**
-
-Configure payment providers for your project:
-
-**[Payment Providers →](../payment-providers/overview.md)**
-
-Or continue exploring SolydFlow's revenue lifecycle:
-
-**[Recover →](../recover/overview.md)** -->
+* **[Transaction States & Lifecycle →](./transaction-states.md)**
+* **[Truth & Consensus Engine →](../truth/overview.md)**
+* **[Recovering Orphaned Transactions →](../recover/orphaned-transactions.md)**
+* **[Webhook Event Handling →](../webhooks/event-handling.md)**

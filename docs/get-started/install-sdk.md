@@ -1,82 +1,113 @@
-# Install the SDK
+---
+id: install-sdk
+title: Installing the SDK
+sidebar_label: Install SDK
+---
 
-Choose the SolydFlow SDK that matches your application.
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
 
-## Supported SDKs
+# Installing the SolydFlow SDK
 
-| Platform | Documentation |
-|----------|---------------|
-| JavaScript | **[JavaScript SDK →](../sdk/javascript.md)** |
-| Flutter | **[Flutter SDK →](../sdk/flutter.md)** |
-| React Native | **[React Native SDK →](../sdk/react-native.md)** |
-| Swift (iOS) | **[Swift SDK →](../sdk/swift.md)** |
-| Kotlin (Android) | **[Kotlin SDK →](../sdk/kotlin.md)** |
-| Other Languages | **[Other Languages →](../sdk/other-languages.md)** |
+SolydFlow provides native client SDKs designed for zero-latency offline entitlement checks, smart payment routing, and automated purchase recovery.
 
 ---
 
-## JavaScript Example
+## Supported Platforms & SDKs
 
-Install the JavaScript SDK with npm:
+| Platform / Framework | Package / Source | Minimum Requirement | Docs |
+| :--- | :--- | :--- | :--- |
+| **Flutter** | `solydflow_flutter` | Flutter 3.0+ / Dart 3.0+ | **[Flutter SDK →](../sdk/flutter.md)** |
+| **JavaScript / TypeScript** | `solydflow-js` | ES6+ / Node 18+ / Browsers | **[JavaScript SDK →](../sdk/javascript.md)** |
+| **React Native** | `@solydflow/react-native` | React Native 0.70+ | **[React Native SDK →](../sdk/react-native.md)** |
+| **iOS (Swift)** | `SolydFlowSwift` | iOS 14.0+ | **[Swift SDK →](../sdk/swift.md)** |
+| **Android (Kotlin)** | `com.solydflow.android` | API Level 21+ | **[Kotlin SDK →](../sdk/kotlin.md)** |
+
+---
+
+## 1. Flutter Installation
+
+### Add to `pubspec.yaml`
+
+Add the SolydFlow Flutter package to your dependencies:
+
+```yaml title="pubspec.yaml"
+dependencies:
+  flutter:
+    sdk: flutter
+
+  solydflow_flutter:
+    git:
+      url: https://github.com/solydflow/solydflow_flutter.git
+      path: sdk_flutter
+      ref: v0.9.0
+```
+
+Install via terminal:
+
+```bash
+flutter pub get
+```
+
+### Platform Requirements
+
+#### Android Configuration
+SolydFlow requires **Android API Level 21 (Android 5.0 Lollipop)** or higher for hardware-backed AES-GCM local storage encryption.
+
+Check `android/app/build.gradle` (or `build.gradle.kts`):
+
+```groovy title="android/app/build.gradle"
+android {
+    defaultConfig {
+        minSdkVersion 21
+        targetSdkVersion 34
+    }
+}
+```
+
+#### iOS Configuration
+Ensure your deployment target is at least **iOS 13.0**:
+
+```ruby title="ios/Podfile"
+platform :ios, '13.0'
+```
+
+---
+
+## 2. JavaScript / TypeScript Installation
+
+Install the lightweight, framework-agnostic web client (works with React, Next.js, Vue, Nuxt, Svelte, or Vanilla JS):
+
+<Tabs>
+<TabItem value="npm" label="npm" default>
 
 ```bash
 npm install solydflow-js
 ```
 
-Import it into your application:
+</TabItem>
+<TabItem value="yarn" label="Yarn">
 
-```javascript
+```bash
+yarn add solydflow-js
+```
+
+</TabItem>
+<TabItem value="pnpm" label="pnpm">
+
+```bash
+pnpm add solydflow-js
+```
+
+</TabItem>
+</Tabs>
+
+### Verification Import
+
+Verify your setup by importing the module:
+
+```typescript title="src/main.ts"
 import { SolydFlow } from "solydflow-js";
+
+console.log("SolydFlow SDK loaded successfully");
 ```
-
-See the **[JavaScript SDK →](../sdk/javascript.md)** for the complete API.
-
----
-
-## After Installation
-
-Once the SDK is installed, configure it with your SolydFlow project.
-
-```text
-Create Project
-      ↓
-Install SDK
-      ↓
-Configure SolydFlow
-      ↓
-Make Your First Purchase
-```
-
-**[Configure SolydFlow →](./configure-solydflow.md)**
-
----
-
-## Keep Credentials Secure
-
-Use the correct API key for the environment you're working in.
-
-```text
-Sandbox → Development & Testing
-
-Live → Production
-```
-
-Never expose:
-
-- Secret API keys
-- Payment provider credentials
-
-Configure provider credentials through the SolydFlow Console.
-
-**[Credential Security →](../security/credential-security.md)**
-
----
-
-## Related Documentation
-
-- **[SDK Overview →](../sdk/overview.md)**
-- **[Credential Security →](../security/credential-security.md)**
-
-<!-- ## Related Content
-
-**[Configure SolydFlow →](./configure-solydflow.md)** -->

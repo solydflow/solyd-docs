@@ -6,154 +6,104 @@ slug: /
 
 # What is SolydFlow?
 
-SolydFlow is revenue infrastructure for digital businesses.
+SolydFlow is the revenue infrastructure for modern digital applications operating across African and global payment rails.
 
-It provides a unified layer for connecting payment providers, managing products and pricing, processing transactions, recovering failed payments, verifying transaction outcomes, and enforcing the correct revenue state.
+It provides a unified, resilient layer for connecting payment providers (Paystack, Flutterwave, Monnify, M-Pesa, Stripe), managing multi-currency pricing, processing transactions, recovering dropped payments, verifying financial consensus, and enforcing user entitlements.
 
-Instead of rebuilding payment and revenue logic for every application, you configure your revenue infrastructure once in SolydFlow and connect your applications to it.
+Instead of writing fragmented billing logic, handling gateway-specific quirks, and building custom webhook retry queues for every app, you configure your revenue infrastructure once in SolydFlow and connect your client apps via SDK.
+
+```mermaid
+graph TD
+    App[Your Application / Mobile & Web]
+    SF["SolydFlow Engine\n(Recover • Truth • Enforce)"]
+    Gateways["Payment Providers\n(Paystack | Flutterwave | M-Pesa | Monnify | Stripe)"]
+    
+    App -->|Single SDK API| SF
+    SF -->|Smart Routing & Consensus| Gateways
+```
 
 ---
 
 ## Recover. Truth. Enforce.
 
-SolydFlow is built around three core responsibilities.
-
-### Recover
-
-Recover interrupted or failed payment flows before revenue is lost.
-
-### Truth
-
-Verify what actually happened before granting access or updating customer records.
-
-### Enforce
-
-Apply the correct revenue outcome by updating entitlements, synchronizing customer access, and enforcing your configured revenue rules.
+SolydFlow is architected around three core responsibilities:
 
 ```text
-             RECOVER
-                ↓
-     Recover interrupted or
-       failed transactions
-                ↓
-              TRUTH
-                ↓
-     Verify what actually
-      happened financially
-                ↓
-             ENFORCE
-                ↓
-     Apply the correct
-       revenue outcome
+               RECOVER
+                  ↓
+       Rescue interrupted or dropped
+        transactions (Sweeper Engine)
+                  ↓
+                TRUTH
+                  ↓
+       Verify actual bank consensus 
+         (Server-to-Server API check)
+                  ↓
+               ENFORCE
+                  ↓
+       Grant instant, offline-first 
+       entitlements & ledger state
 ```
+
+### 1. Recover
+Network drops, closed browser tabs, and interrupted USSD/STK pushes happen constantly. SolydFlow’s Sweeper engine rescues dropped transactions and restores access even if the user closes the app mid-payment.
+
+### 2. Truth
+Never grant access based solely on unverified client responses or spoofable webhook payloads. SolydFlow queries provider APIs directly to establish cryptographically verified financial truth before recording transactions.
+
+### 3. Enforce
+Once truth is established, SolydFlow updates entitlements, synchronizes customer access across mobile and web platforms, and caches state locally for encrypted offline access.
 
 ---
 
 ## How SolydFlow Fits Into Your Stack
 
-Your application remains responsible for your product and user experience.
+Your application handles user experience, your payment gateways process raw card/mobile money rails, and SolydFlow handles everything in between:
 
-Your payment providers remain responsible for processing payments.
+```mermaid
+flowchart LR
+    APP["Your App<br/>Flutter / Web / Native"]
 
-SolydFlow provides the revenue infrastructure between them.
+    SF["SolydFlow<br/><br/>Recover → Truth → Enforce"]
 
-```text
-┌──────────────────────┐
-│   Your Application   │
-└──────────┬───────────┘
-           │
-           ▼
-┌──────────────────────┐
-│      SolydFlow       │
-│                      │
-│ Recover              │
-│ Truth                │
-│ Enforce              │
-└──────────┬───────────┘
-           │
-     ┌─────┼─────┐
-     ▼     ▼     ▼
- Paystack Flutterwave Stripe
+    PAY["Payment Providers<br/><br/>Paystack · Flutterwave · Stripe · ..."]
+
+    APP <--> SF
+    SF <--> PAY
 ```
 
 ---
 
-## Why SolydFlow Exists
+## Why SolydFlow Exists: Real-World Example
 
-Real-world payments don't always follow a simple path.
-
-```text
-Customer
-    ↓
-Payment Attempt
-    ↓
-Provider
-    ↓
-Delayed Response
-    ↓
-Missing Callback
-    ↓
-Unknown Transaction State
-    ↓
-Recover
-    ↓
-Truth
-    ↓
-Enforce
-    ↓
-Correct Entitlement
-```
-
-SolydFlow is designed around these real-world payment conditions, helping your application respond to verified transaction outcomes instead of assumptions.
-
----
-
-## Configure Once
-
-Configure your revenue infrastructure in SolydFlow:
-
-- Products
-- Packages
-- Pricing
-- Payment Providers
-- Paywalls
-- Entitlements
-
-Your applications connect to SolydFlow while your payment providers continue processing payments.
-
-### Example
+In emerging markets, payments rarely follow a pristine linear flow:
 
 ```text
-Premium Monthly
-        │
-        ├── ₦5,000 (NGN)
-        ├── KSh500 (KES)
-        └── $4.99 (USD)
-                │
-                ▼
-          Customer Purchases
-                │
-                ▼
-             Recover
-                ▼
-              Truth
-                ▼
-             Enforce
-                ▼
-        premium_access Granted
+User initiates ₦5,000 purchase via Paystack / USSD
+    ↓
+Bank debits user account
+    ↓
+Network times out before the redirect returns to your app
+    ↓
+[Standard Integration]: User charged, but features remain LOCKED ❌
+    ↓
+[SolydFlow Recovery]: Webhook/Sweeper intercepts transaction
+    ↓
+[SolydFlow Truth]: SolydFlow verifies settled status directly with Paystack API
+    ↓
+[SolydFlow Enforce]: "gold_access" unlocked on device automatically ✅
 ```
 
 ---
 
-## Start Building
+## Configure Once, Monetize Anywhere
 
-Ready to integrate SolydFlow?
+Define your monetization matrix once in the SolydFlow Console:
 
-## Related Documentation
+| Plan Identifier | Local Pricing | Targeted Entitlement |
+| :--- | :--- | :--- |
+| `pro_monthly` | `₦5,000` (NGN), `KSh 500` (KES), `$4.99` (USD) | `pro_access` |
+| `pro_yearly` | `₦50,000` (NGN), `KSh 5,000` (KES), `$49.99` (USD) | `pro_access` |
 
-- **[How SolydFlow Works →](./how-solydflow-works.md)**
+Both packages map to the same `pro_access` entitlement. Your application code only checks `hasEntitlement("pro_access")`, insulating your app logic from regional currencies, price updates, or provider migrations.
 
-<!-- ## Next Step
-
-**[Quickstart →](./get-started/quickstart.md)**
- -->

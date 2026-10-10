@@ -1,139 +1,129 @@
-# Configure SolydFlow
+---
+id: configure-solydflow
+title: Configuring SolydFlow
+sidebar_label: Configure SDK
+---
 
-After installing the SDK, initialize it with your SolydFlow project so your application can communicate with SolydFlow.
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
 
-```text
-SolydFlow Project
-        │
-        ▼
-     API Key
-        │
-        ▼
-Your Application
-        │
-        ▼
-   SolydFlow SDK
+# Initializing SolydFlow
+
+Initialize the SolydFlow SDK as early as possible in your application lifecycle—ideally right after your customer authenticates.
+
+```mermaid
+flowchart LR
+    A[App Launch] --> B{User Logged In?}
+    B -->|Yes| C["SolydFlow.configure(userID)"]
+    B -->|No / Guest| D["SolydFlow.configure(anon_id)"]
+    C --> E[Encrypted Cache Ready]
+    D --> E
+    E --> F[Instant Access Checks & Purchases]
 ```
 
 ---
 
-## Before You Begin
+## Configuration Parameters
 
-Make sure you have:
-
-- A SolydFlow project
-- A Project API key
-- The SolydFlow SDK installed
-
-If not, complete:
-
-- **[Create a Project →](./create-project.md)**
-- **[Install the SDK →](./install-sdk.md)**
+| Parameter | Type | Required | Description |
+| :--- | :--- | :--- | :--- |
+| `apiKey` | `String` | **Yes** | Your project public key (`sf_pk_test_...` or `sf_pk_live_...`). Safe for client apps. |
+| `userID` | `String` | **Yes** | Unique identifier from your auth system (Firebase UID, Supabase UUID, or database ID). |
+| `userEmail` | `String` | **Optional** | Customer email. Used for transaction receipts and churn recovery emails. |
+| `userPhone` | `String` | **Recommended** | Phone number in international E.164 format (e.g., `+2348012345678`, `+254712345678`). **Required for M-Pesa STK push.** |
 
 ---
 
-## Initialize the SDK
+## Implementation Examples
 
-Initialize SolydFlow when your application starts.
+<Tabs>
+<TabItem value="flutter" label="Flutter (Auth Lifecycle)" default>
 
-```javascript
+```dart title="lib/services/billing_service.dart"
+import 'package:flutter/foundation.dart';
+import 'package:solydflow_flutter/solydflow_flutter.dart';
+
+class BillingService {
+  /// Call this when the user logs in
+  static Future<void> initializeUser({
+    required String uid,
+    required String email,
+    String? phoneNumber,
+  }) async {
+    try {
+      await SolydFlow.configure(
+        // Use test key during development, live key in release builds
+        apiKey: kDebugMode
+            ? "sf_pk_test_a8f93b1c8e924a1b82"
+            : "sf_pk_live_44019283bc918237fa",
+        userID: uid,
+        userEmail: email,
+        userPhone: phoneNumber ?? "",
+      );
+      
+      debugPrint("SolydFlow initialized for user: $uid");
+    } catch (error) {
+      debugPrint("Failed to initialize SolydFlow: $error");
+    }
+  }
+
+  /// Call this when the user logs out to clear local encrypted cache
+  static Future<void> logoutUser() async {
+    await SolydFlow.reset();
+  }
+}
+```
+
+</TabItem>
+<TabItem value="javascript" label="JavaScript / TypeScript (Web)">
+
+```typescript title="src/services/billing.ts"
 import { SolydFlow } from "solydflow-js";
 
-await SolydFlow.configure({
-    apiKey: "sf_pk_test_...",
-    userId: "usr_123"
-});
+export async function initializeSolydFlow(
+  userId: string,
+  email: string,
+  phone?: string
+) {
+  try {
+    await SolydFlow.configure(
+      process.env.NODE_ENV === "production"
+        ? "sf_pk_live_44019283bc918237fa"
+        : "sf_pk_test_a8f93b1c8e924a1b82",
+      userId,
+      email,
+      phone
+    );
+
+    console.log("SolydFlow web client initialized");
+  } catch (error) {
+    console.error("SolydFlow initialization error:", error);
+  }
+}
 ```
 
-The initialization method may vary depending on your SDK.
-
-**[SDK Documentation →](../sdk/overview.md)**
-
----
-
-## Choose the Correct API Key
-
-Use the API key for the environment you're working in.
-
-```text
-Sandbox
-sf_pk_test_...
-
-Live
-sf_pk_live_...
-```
-
-- Sandbox → Development & Testing
-- Live → Production
-
-Never expose secret credentials in client-side applications.
-
-**[Credential Security →](../security/credential-security.md)**
+</TabItem>
+</Tabs>
 
 ---
 
-## Identify Your Customer
+## Environment Keys
 
-Provide a stable user identifier during initialization.
+Always pair the correct API key with your current deployment environment:
 
-```javascript
-await SolydFlow.configure({
-    apiKey: "sf_pk_test_...",
-    userId: "user_12345"
-});
-```
+* **Sandbox / Staging:** `sf_pk_test_...` (Communicates with gateway test environments).
+* **Production:** `sf_pk_live_...` (Processes real card charges and mobile money deductions).
 
-The same customer should always use the same `userId`.
-
-This allows SolydFlow to associate:
-
-- Transactions
-- Entitlements
-- Purchase history
-
-with the correct customer.
+:::danger{title="Keep Secret Keys on the Backend"}
+Your **Secret Keys** (`sf_live_...` and `sf_test_...`) should **only** reside on your backend server to verify webhook signatures. Never pass secret keys to `SolydFlow.configure()`.
+:::
 
 ---
 
-## Initialize Once
+## Handling Guest / Anonymous Users
 
-Initialize SolydFlow once during application startup before performing revenue operations.
+If your application allows users to explore paywalls before registering an account:
 
-```text
-Application Starts
-        │
-        ▼
-Initialize SDK
-        │
-        ▼
-Customer Ready
-        │
-        ▼
-Purchases & Entitlements
-```
-
----
-
-## Verify Your Configuration
-
-Before continuing, confirm that:
-
-- SDK initialization succeeds
-- The correct API key is used
-- The customer is identified
-- Your application can communicate with SolydFlow
-
-If something isn't working, see:
-
-**[Troubleshooting →](../troubleshooting/overview.md)**
-
----
-
-## Related Documentation
-
-- **[SDK Overview →](../sdk/overview.md)**
-- **[Credential Security →](../security/credential-security.md)**
-
-<!-- ## Related Content
-
-**[Make Your First Purchase →](./first-purchase.md)** -->
+1. Generate a temporary anonymous ID (e.g., `anon_c89b12d847`).
+2. Call `SolydFlow.configure(apiKey, "anon_c89b12d847")`.
+3. When the customer completes registration or sign-in, call `SolydFlow.configure()` again with their permanent user ID. SolydFlow will automatically alias the records and transfer any active purchases.

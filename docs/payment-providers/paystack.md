@@ -1,747 +1,132 @@
-# Paystack
+---
+id: paystack
+title: Connecting Paystack
+sidebar_label: Paystack
+---
 
-Paystack can be connected to SolydFlow to process payments for customers in supported African markets.
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
 
-With Paystack connected, SolydFlow provides the revenue infrastructure around Paystack transactions while your application works with a consistent SolydFlow revenue layer.
+# Connecting Paystack
 
-```text
-Your Application
-       ↓
-   SolydFlow
-       ↓
-   Paystack
-       ↓
-Payment Network
+Connect your Paystack account to process cards (Visa, Mastercard, Verve), USSD, Direct Bank Transfers, and Apple Pay across African markets (**Nigeria, Ghana, Kenya, and South Africa**).
+
+By integrating Paystack with SolydFlow's **Consensus Engine** and **Sweeper**, you eliminate webhook spoofing, rescue delayed bank transfers, and automate entitlement enforcement.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Customer as African Customer (NGN / GHS / KES / ZAR)
+    participant App as Your App (SDK)
+    participant SF as SolydFlow Cloud
+    participant PSTK as Paystack API
+    participant Ledger as Immutable Ledger
+
+    Customer->>App: Subscribes (₦5,000 / mo)
+    App->>SF: SolydFlow.purchasePackage("pro_monthly_ngn")
+    SF->>PSTK: Initialize Transaction with Vault Key (sk_live_...)
+    PSTK-->>Customer: Displays Paystack Modal / USSD / Bank Transfer Prompt
+    Customer->>PSTK: Completes Bank Transfer / Enters Card OTP
+    PSTK-->>SF: Inbound Webhook: charge.success
+    
+    rect rgb(240, 248, 255)
+    Note over SF,PSTK: Layer 2 Consensus Verification
+    SF->>PSTK: GET /transaction/verify/ref_1029384bc (Direct REST Call)
+    PSTK-->>SF: Confirms amount: 500000 kobo & status: "success"
+    SF->>Ledger: Commit SETTLED_CONSENSUS
+    end
+
+    SF-->>App: Grant "pro_access" & Update Encrypted Local Cache
 ```
-
-Paystack remains responsible for processing the payment. SolydFlow manages the application-facing revenue flow around it.
 
 ---
 
-## When to Use Paystack
+## Step 1: Add Paystack Secret Keys to the Vault
 
-Paystack is particularly useful when your application serves customers in African markets supported by Paystack.
+SolydFlow requires your Paystack Secret Keys to initialize transactions and independently verify payments directly with Paystack's API (bypassing client-side spoofing).
 
-For example:
+1. Log in to your [Paystack Dashboard](https://dashboard.paystack.com).
+2. Navigate to **Settings → API Keys & Webhooks**.
+3. Copy your **Secret Key** (`sk_test_...` for Sandbox and `sk_live_...` for Production).
+4. Open the [SolydFlow Console](https://console.solydflow.com).
+5. Go to **Project Settings → API Credentials Vault**.
+6. Expand the **Paystack** section, paste both your Test and Live keys, and click **Save Encrypted Configuration**.
+
+:::info{title="AES-256-GCM Encryption"}
+All credentials stored in the SolydFlow Vault are encrypted using hardware-backed AES-256-GCM. Secret keys are never exposed to client applications.
+:::
+
+---
+
+## Step 2: Configure the Inbound Webhook
+
+Paystack must notify SolydFlow when asynchronous payments (such as USSD or Bank Transfers) settle.
+
+1. In the SolydFlow Console, scroll down to **Inbound Gateway Webhook Configurations**.
+2. Copy your unique Paystack Inbound Webhook URL:
+   ```text
+   https://api.solydflow.com/api/v1/webhook/paystack/{your_solydflow_api_key}
+   ```
+3. In your Paystack Dashboard, navigate to **Settings → API Keys & Webhooks**.
+4. Paste the URL into the **Webhook URL** field (for both Test and Live modes).
+5. Click **Save Changes**.
+
+---
+
+## How SolydFlow Secures Paystack Transactions
+
+SolydFlow **never grants access based solely on incoming webhook payloads**.
+
+When Paystack sends a `charge.success` webhook:
+1. SolydFlow intercepts the incoming event.
+2. Entitlement activation is temporarily held in a pending state.
+3. The **Consensus Engine** makes a server-to-server call to Paystack (`GET /transaction/verify/{reference}`) using your encrypted `sk_live_...` key.
+4. If the live API response confirms that the amount, currency, and reference match, SolydFlow commits a `SETTLED_CONSENSUS` record to the **Immutable Ledger**.
+5. The user's entitlement (e.g., `pro_access`) is immediately granted and synced to their encrypted offline storage.
+
+This prevents:
+* **Client-side manipulation:** Faking success callbacks inside the app.
+* **Webhook Replay Attacks:** Re-sending previous webhook payloads to gain free access.
+* **Partial Amount Fraud:** Paying ₦50 instead of ₦5,000 for a subscription.
+
+---
+
+## Handling Delayed USSD & Bank Transfers
+
+In emerging markets, customers frequently complete payments via bank apps or USSD prompts while their mobile app is closed:
 
 ```text
-Application
+Customer initiates ₦5,000 Bank Transfer via Paystack
     ↓
-SolydFlow
+Switches to banking app to send funds
     ↓
-Paystack
+Device kills your app to free memory
     ↓
-African Customers
-```
-
-Paystack can also exist alongside other providers in the same SolydFlow project.
-
-```text
-                 SolydFlow
-                     │
-          ┌──────────┼──────────┐
-          ↓          ↓          ↓
-      Paystack     Stripe   Flutterwave
-          │          │          │
-       Africa     Global     Africa
-```
-
-The appropriate provider depends on your target market, payment methods, currencies, and business requirements.
-
----
-
-## How Paystack Fits Into SolydFlow
-
-The integration follows the standard SolydFlow provider architecture.
-
-```text
-                 SolydFlow
-                     │
-              Paystack Connection
-                     │
-          ┌──────────┴──────────┐
-          ↓                     ↓
-     Payment Flow          Webhooks
-          │                     │
-          ↓                     ↓
-      Paystack              SolydFlow
-          │                     │
-          └──────────┬──────────┘
-                     ↓
-                Transaction
-                     ↓
-                 Entitlement
-                     ↓
-              Application Access
-```
-
-Your application does not need to implement Paystack-specific revenue logic throughout its codebase.
-
----
-
-## What Paystack Handles
-
-Paystack handles the provider-side payment operation.
-
-Depending on the payment method and configuration, this can include:
-
-* Payment processing
-* Supported payment methods
-* Payment authorization
-* Provider-side transaction state
-* Provider-side customer/payment records
-* Provider webhooks
-* Refund-related operations supported by Paystack
-
-Paystack's supported countries, payment methods, currencies, and capabilities can change.
-
-Always verify current provider capabilities before relying on a specific feature in production.
-
----
-
-## What SolydFlow Handles
-
-SolydFlow sits above Paystack and manages the revenue infrastructure around the provider transaction.
-
-This can include:
-
-* Connecting Paystack to your project
-* Associating payments with your products and packages
-* Tracking transactions
-* Processing provider events
-* Recovering transactions when expected events are missing
-* Verifying transaction state
-* Maintaining a unified transaction view
-* Managing entitlements
-* Supporting routing and failover where configured
-
-```text
-Paystack Payment
-       ↓
-Provider Event
-       ↓
-   SolydFlow
-       ↓
-Transaction State
-       ↓
-  Entitlement
-       ↓
-Application Access
-```
-
----
-
-## Prerequisites
-
-Before connecting Paystack to SolydFlow, you should have:
-
-1. A Paystack account
-2. The required Paystack credentials
-3. A SolydFlow project
-4. Products configured in SolydFlow
-5. Packages and prices configured
-6. The markets and payment methods you intend to support identified
-
-Your Paystack account must also be configured appropriately for your business and intended payment flows.
-
----
-
-## Connecting Paystack
-
-The general setup process is:
-
-```text
-Create / Configure Paystack Account
-              ↓
-      Obtain Credentials
-              ↓
-      Connect to SolydFlow
-              ↓
-     Configure Products
-              ↓
-     Configure Packages
-              ↓
-       Configure Webhooks
-              ↓
-              Test
-              ↓
-          Go Live
-```
-
-The exact configuration fields depend on the current SolydFlow Paystack integration.
-
----
-
-## Paystack Credentials
-
-Paystack integrations require credentials to authenticate requests.
-
-Treat secret credentials as sensitive information.
-
-```text
-❌ Do not expose secret credentials
-   in frontend application code.
-
-✅ Keep secret credentials
-   in protected configuration.
-```
-
-Configure provider credentials through the supported SolydFlow provider configuration mechanism.
-
-See:
-
-**[API Keys →](../security/api-keys.md)**
-
-**[Credential Security →](../security/credential-security.md)**
-
----
-
-## Products and Packages
-
-Your product structure should remain in SolydFlow rather than being duplicated inside your Paystack-specific application logic.
-
-For example:
-
-```text
-Product
-└── Pro
-    ├── Monthly
-    └── Annual
-```
-
-The package defines what the customer is purchasing.
-
-Paystack processes the corresponding payment.
-
-See:
-
-**[Products →](../concepts/products.md)**
-
-**[Packages →](../concepts/packages.md)**
-
-**[Products and Packages →](../monetization/products-and-packages.md)**
-
----
-
-## Paystack and Paywalls
-
-The customer typically encounters your application's paywall before the payment is processed.
-
-```text
-Customer
-   ↓
-Application
-   ↓
-SolydFlow Paywall
-   ↓
-Package
-   ↓
-Paystack
-   ↓
-Payment
-```
-
-The paywall communicates the configured product, package, and price.
-
-Paystack then handles the payment operation.
-
-See:
-
-**[Paywalls →](../concepts/paywalls.md)**
-
----
-
-## Paystack Webhooks
-
-Paystack can send webhook events to communicate changes related to payment activity.
-
-Conceptually:
-
-```text
-Paystack
-   ↓
-Webhook Event
-   ↓
-SolydFlow
-   ↓
-Transaction Processing
-```
-
-Webhook events are an important part of keeping the revenue lifecycle synchronized.
-
-A successful payment may occur independently of your application's immediate request lifecycle.
-
-For example:
-
-```text
-Customer
-   ↓
-Payment
-   ↓
-Paystack
-   ↓
-Webhook
-   ↓
-SolydFlow
-```
-
-See:
-
-**[Provider Webhooks →](../webhooks/provider-webhooks.md)**
-
----
-
-## Missing Paystack Webhooks
-
-A payment can succeed even when the expected webhook is not received by the application.
-
-For example:
-
-```text
-Customer
-   ↓
-Paystack
-   ↓
-Payment Successful
-   ↓
-Webhook
-   X
-```
-
-The payment outcome and webhook delivery are separate events.
-
-SolydFlow's recovery and truth layers are designed to help handle situations where the expected provider event is missing.
-
-```text
-Paystack
-   ↓
-Payment Successful
-   ↓
-Webhook Missing
-   ↓
-Recovery
-   ↓
-Verification
-   ↓
-Transaction State
-   ↓
-Entitlement
-```
-
-See:
-
-**[Failed Webhooks →](../recover/failed-webhooks.md)**
-
-**[Transaction Recovery →](../recover/transaction-recovery.md)**
-
-**[Transaction Verification →](../truth/transaction-verification.md)**
-
----
-
-## Paystack Transaction State
-
-Paystack has its own representation of transaction state.
-
-SolydFlow also maintains an application-facing transaction lifecycle.
-
-These states may not always update simultaneously.
-
-For example:
-
-```text
-Paystack
-└── Successful
-
-SolydFlow
-└── Processing
-```
-
-SolydFlow can use provider information and transaction events to determine the appropriate state for the application.
-
-```text
-Paystack State
-      +
-SolydFlow State
-      ↓
-Transaction Truth
-```
-
-See:
-
-**[Transaction States →](../concepts/transaction-states.md)**
-
-**[State Mismatches →](../truth/state-mismatches.md)**
-
----
-
-## Paystack and Transaction Recovery
-
-Consider this scenario:
-
-```text
-Application
+Paystack registers successful bank transfer
     ↓
-Purchase Started
+SolydFlow Consensus Engine receives webhook & records SETTLED_CONSENSUS
     ↓
-Paystack
-    ↓
-Payment Completed
-    ↓
-Webhook Missing
+Customer re-opens your app: "pro_access" is unlocked instantly from cache ✅
 ```
-
-Without a recovery layer, the application may continue to believe that the transaction is incomplete.
-
-SolydFlow can provide the recovery layer around the provider transaction:
-
-```text
-Transaction
-    ↓
-Recovery
-    ↓
-Provider Verification
-    ↓
-Resolved State
-    ↓
-Entitlement
-```
-
-This means your applications do not need to independently implement the same provider-specific recovery logic.
-
-See:
-
-**[Recover →](../recover/overview.md)**
 
 ---
 
-## Paystack and the Transaction Ledger
+## Sandbox Testing Matrix
 
-Paystack provides provider-side transaction information.
+When developing with your `sf_pk_test_...` key, use standard Paystack test cards:
 
-SolydFlow can maintain a unified transaction record for the application.
-
-```text
-Paystack
-   ↓
-Provider Transaction
-   ↓
-SolydFlow
-   ↓
-SolydFlow Transaction
-   ↓
-Unified Revenue Record
-```
-
-This becomes increasingly valuable when the same application uses more than one payment provider.
-
-```text
-                  SolydFlow
-                      │
-          ┌───────────┼───────────┐
-          ↓           ↓           ↓
-      Paystack     Stripe     Flutterwave
-          │           │           │
-          └───────────┼───────────┘
-                      ↓
-                Unified Ledger
-```
-
-See:
-
-**[Transaction Ledger →](../truth/transaction-ledger.md)**
-
-**[Reconciliation →](../truth/reconciliation.md)**
+| Test Scenario | Card Number | Expiry | CVV | Pin / OTP | Expected Outcome |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Successful Payment** | `4084 0841 0000 0000` | Any future date | `408` | `Any 4 digits` / `123456` | `SETTLED_CONSENSUS` (Granted) |
+| **Mastercard Test** | `5123 4500 0000 0000` | Any future date | `512` | `Any 4 digits` / `123456` | `SETTLED_CONSENSUS` (Granted) |
+| **Declined Card** | `4084 0841 0000 0001` | Any future date | `408` | `Any 4 digits` | `FAILED_DECLINED` (No Access) |
+| **Insufficient Funds** | `4084 0841 0000 0002` | Any future date | `408` | `Any 4 digits` | `FAILED_DECLINED` (No Access) |
 
 ---
 
-## Using Paystack Alongside Other Providers
-
-SolydFlow is designed to allow your revenue architecture to support multiple providers.
-
-For example:
-
-```text
-                  SolydFlow
-                      │
-          ┌───────────┼───────────┐
-          ↓           ↓           ↓
-      Paystack     Stripe     Flutterwave
-          │           │           │
-       Nigeria       US          Ghana
-```
-
-This can be useful when your application serves multiple markets.
-
-The provider can be selected based on your business requirements, market, payment method, and configured routing rules.
-
-See:
-
-**[Smart Routing →](../enforce/smart-routing.md)**
-
----
-
-## Paystack and Regional Payments
-
-For applications serving African customers, payment methods can differ between markets.
-
-A possible architecture could look like:
-
-```text
-Nigeria
-   ↓
-Paystack
-   ↓
-Supported Nigerian Payment Methods
-```
-
-while another market may use a different provider:
-
-```text
-Kenya
-   ↓
-M-Pesa
-   ↓
-Local Payment Methods
-```
-
-SolydFlow provides a common revenue layer above these provider differences.
-
-See:
-
-**[Regional Pricing →](../monetization/regional-pricing.md)**
-
-**[Local Payments →](../global-commerce/local-payments.md)**
-
----
-
-## Paystack Failover
-
-If your project has multiple providers configured, Paystack can participate in a resilient provider architecture where supported.
-
-Conceptually:
-
-```text
-Payment Request
-      ↓
-   SolydFlow
-      ↓
- Preferred Provider
-      ↓
-   Unavailable
-      ↓
-Alternative Provider
-```
-
-Provider failover must be designed carefully.
-
-A delayed provider response should not automatically result in a second payment attempt if the first payment may already have succeeded.
-
-Transaction verification is therefore important when implementing resilient payment flows.
-
-See:
-
-**[Provider Failover →](../enforce/provider-failover.md)**
-
-**[Transaction Verification →](../truth/transaction-verification.md)**
-
----
-
-## Testing Paystack
-
-Use Paystack's supported test environment before processing live payments.
-
-A typical testing flow is:
-
-```text
-Development
-    ↓
-Paystack Test Environment
-    ↓
-SolydFlow Sandbox
-    ↓
-Test Transaction
-    ↓
-Webhook Test
-    ↓
-Failure / Recovery Test
-    ↓
-Production
-```
-
-Test at least:
-
-* Successful payments
-* Failed payments
-* Pending payments
-* Webhook delivery
-* Missing webhooks
-* Provider errors
-* Transaction recovery
-* Transaction verification
-* Entitlement updates
-
-See:
-
-**[Test Transactions →](../sandbox/test-transactions.md)**
-
-**[Simulate Failures →](../sandbox/simulate-failures.md)**
-
-**[Testing Recovery →](../sandbox/testing-recovery.md)**
-
----
-
-## Production Checklist
-
-Before using Paystack for live transactions, verify:
-
-### Paystack
-
-* Your Paystack account is configured for your business
-* Production credentials are being used
-* The intended payment methods are enabled
-* The required currencies are supported
-* Provider webhook configuration is correct
-
-### SolydFlow
-
-* Paystack is connected to the correct project
-* Products are configured correctly
-* Packages are configured correctly
-* Prices are correct
-* Paywalls display the intended offering
-* Webhook processing is configured
-* Recovery has been tested
-* Entitlements behave correctly
-
-### Security
-
-* Secret credentials are protected
-* Webhook signatures are verified
-* Production secrets are not exposed to clients
-* Access to provider configuration is restricted
-
-See:
-
-**[Production Checklist →](../production/production-checklist.md)**
-
----
-
-## Refunds and Payment Changes
-
-Paystack supports payment operations according to its current capabilities and your account configuration.
-
-When a provider-side payment changes after the original transaction, the application-facing revenue state may also need to change.
-
-Conceptually:
-
-```text
-Paystack Event
-      ↓
-SolydFlow
-      ↓
-Transaction State
-      ↓
-Entitlement / Access
-```
-
-Do not assume that the original payment event is the only event that can affect the customer's revenue lifecycle.
-
----
-
-## Compliance
-
-Paystack remains responsible for the provider-side requirements associated with its payment infrastructure.
-
-However, using Paystack does not automatically remove all compliance responsibilities from your business.
-
-Depending on your business model and target markets, you may need to consider:
-
-* Taxes
-* Consumer protection
-* Data protection
-* Business registration
-* Payment regulations
-* Local requirements
-
-See:
-
-**[Compliance →](../security/compliance.md)**
-
-**[Tax and Compliance →](../global-commerce/tax-and-compliance.md)**
-
----
-
-## Troubleshooting
-
-When a Paystack payment does not produce the expected result, trace the complete flow.
-
-```text
-Customer
-   ↓
-Paywall
-   ↓
-Purchase
-   ↓
-Paystack
-   ↓
-Webhook
-   ↓
-SolydFlow
-   ↓
-Transaction
-   ↓
-Entitlement
-```
-
-Check:
-
-1. Did the customer initiate the purchase?
-2. Did Paystack receive the payment request?
-3. What state does Paystack report?
-4. Was the expected webhook generated?
-5. Did SolydFlow receive the webhook?
-6. What transaction state does SolydFlow show?
-7. Was the transaction verified?
-8. Was the entitlement granted?
-
-See:
-
-**[Troubleshooting →](../troubleshooting/overview.md)**
-
----
-
-## Key Principle
-
-> **Paystack processes the payment. SolydFlow manages the revenue flow around the payment.**
-
-Your application should not need to duplicate Paystack-specific payment, webhook, recovery, and transaction logic throughout its codebase.
-
-```text
-Your Application
-       ↓
-   SolydFlow
-       ↓
-   Paystack
-       ↓
-    Payment
-       ↓
-  Transaction
-       ↓
-  Entitlement
-       ↓
-Application Access
-```
-
-This allows Paystack to remain the payment processor while SolydFlow provides a consistent revenue infrastructure for your application.
-
-<!-- ---
-
-## Next Steps
-
-If you also need another provider, continue with:
-
-**[Flutterwave →](./flutterwave.md)**
-
-Or return to the complete provider list:
-
-**[Payment Providers Overview →](./overview.md)** -->
+## Related Documentation
+
+* **[Connecting Flutterwave (Pan-Africa) →](./flutterwave.md)**
+* **[Connecting M-Pesa (Kenya Mobile Money) →](./mpesa.md)**
+* **[Connecting Stripe (Global Cards) →](./stripe.md)**
+* **[Smart Payment Routing →](../enforce/smart-routing.md)**

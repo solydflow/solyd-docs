@@ -1,562 +1,136 @@
-# Regional Pricing
+---
+id: regional-pricing
+title: Regional Pricing & Localization
+sidebar_label: Regional Pricing
+---
 
-Customers in different markets may not pay the same amount for your product.
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
 
-Regional pricing allows you to offer the same product and package at prices that are appropriate for different markets.
+# Regional Pricing & Localization
 
-```text
-Product
-   ↓
-Package
-   ↓
-Regional Pricing
-   ├── Nigeria
-   ├── United States
-   ├── United Kingdom
-   └── Other Markets
+Regional pricing allows you to offer the same core product across different countries at price points calibrated for local purchasing power, using local currencies and local payment methods.
+
+```mermaid
+flowchart TD
+    User[Customer Launches Paywall] --> IP{Geo-IP Detection}
+    
+    IP -->|Nigeria| NGN["🇳🇬 NGN Package: ₦5,000\n(Paystack / Monnify VA)"]
+    IP -->|Kenya| KES["🇰🇪 KES Package: KSh 500\n(M-Pesa STK Push)"]
+    IP -->|Ghana| GHS["🇬🇭 GHS Package: GH₵ 65\n(Flutterwave Mobile Money)"]
+    IP -->|South Africa| ZAR["🇿🇦 ZAR Package: R 99\n(Paystack EFT)"]
+    IP -->|Rest of World| USD["🌍 USD Package: $4.99\n(Stripe Global Cards)"]
 ```
-
-This lets you adapt your pricing strategy without creating a separate product for every country.
 
 ---
 
-## Why Regional Pricing Matters
+## The Emerging Market Conversion Problem
 
-A single global price does not always work well across different markets.
+Charging a flat global price (e.g. `$9.99 USD`) across all markets introduces major conversion bottlenecks:
 
-For example, you may want to offer:
-
-```text
-Pro Monthly
-
-Nigeria
-₦15,000 / month
-
-United States
-$20 / month
-
-United Kingdom
-£16 / month
-```
-
-The underlying product is still the same.
-
-```text
-Product
-└── Pro
-    └── Monthly
-```
-
-Only the applicable price changes based on the market.
+1. **Purchasing Power Disparity:** In Nigeria or Kenya, $9.99 USD (~₦15,500 / ~KSh 1,300) can represent a prohibitive percentage of discretionary income.
+2. **FX Volatility & Bank Limits:** Local bank cards frequently block international foreign currency (USD) transactions or impose extreme FX conversion surcharges.
+3. **Unfamiliar Payment Rails:** Forcing a Kenyan user to enter credit card details instead of triggering an M-Pesa STK push reduces checkout completion rates by up to **70%**.
 
 ---
 
-## One Product, Multiple Markets
+## Multi-Market Pricing & Rail Matrix
 
-Regional pricing keeps your product structure simple.
+SolydFlow pairs localized pricing with local payment methods:
 
-Instead of:
-
-```text
-Nigeria Product
-United States Product
-United Kingdom Product
-```
-
-you can have:
-
-```text
-Product
-└── Pro
-    └── Monthly
-        ├── Nigeria Price
-        ├── US Price
-        └── UK Price
-```
-
-This makes it easier to manage a product that serves customers across multiple countries.
+| Market | Currency | Recommended Local Price | Primary Gateway | Preferred Local Methods |
+| :--- | :--- | :--- | :--- | :--- |
+| **Nigeria** | `NGN` | `₦5,000` | Paystack / Monnify | Local Debit Cards, Bank Transfer, USSD |
+| **Kenya** | `KES` | `KSh 500` | Safaricom (Daraja) / Paystack | **M-Pesa STK Push** |
+| **Ghana** | `GHS` | `GH₵ 65` | Flutterwave | MTN Mobile Money, Telecel Cash |
+| **South Africa** | `ZAR` | `R 99` | Paystack | Capitec Pay, Ozow Instant EFT |
+| **United States / EU**| `USD` / `EUR` | `$4.99` / `€4.99` | Stripe | Apple Pay, Google Pay, Visa, Mastercard |
 
 ---
 
-## Regional Pricing and Currency
-
-Different markets may use different currencies.
-
-For example:
-
-```text
-Pro Monthly
-
-Nigeria       → ₦15,000
-United States → $20
-United Kingdom → £16
-```
-
-The currency displayed to the customer should correspond to the configured price for the applicable market.
-
-This gives customers a more familiar purchasing experience.
-
----
-
-## Regional Pricing and Packages
-
-Regional pricing works at the package level.
-
-For example:
-
-```text
-Product
-└── Project Management
-    │
-    └── Pro
-        │
-        ├── Nigeria → ₦15,000
-        ├── US → $20
-        └── UK → £16
-```
-
-The package remains the same while the price can vary by market.
-
-This means you do not need to duplicate the package simply because you serve another country.
-
----
-
-## Regional Pricing and Paywalls
-
-Your paywall can present the applicable price to the customer.
-
-For example, the same package could appear as:
-
-```text
-Nigeria
-
-┌──────────────────────┐
-│       Pro            │
-│   ₦15,000 / month    │
-│                      │
-│     [Subscribe]      │
-└──────────────────────┘
-```
-
-while a customer in another market may see:
-
-```text
-United States
-
-┌──────────────────────┐
-│       Pro            │
-│     $20 / month      │
-│                      │
-│     [Subscribe]      │
-└──────────────────────┘
-```
-
-The product remains the same.
-
-The applicable regional price changes.
-
----
-
-## Regional Pricing and Payment Providers
-
-Regional pricing is particularly useful when your application supports multiple payment providers.
-
-For example:
-
-```text
-                 SolydFlow
-                     │
-              Regional Pricing
-                     │
-       ┌─────────────┼─────────────┐
-       ↓             ↓             ↓
-    Nigeria          US            UK
-       │             │             │
-   Paystack        Stripe        Stripe
-```
-
-Your payment-provider configuration can then support the payment methods appropriate to each market.
-
-See:
-
-**[Payment Providers →](../payment-providers/overview.md)**
-
----
-
-## Regional Pricing Does Not Mean Separate Products
-
-Avoid creating duplicate products simply because customers are in different countries.
-
-Instead of:
-
-```text
-Product: Pro Nigeria
-Product: Pro US
-Product: Pro UK
-```
-
-prefer a structure where appropriate:
-
-```text
-Product: Pro
-
-Package: Monthly
-
-Prices:
-├── Nigeria
-├── US
-└── UK
-```
-
-This keeps your product catalog easier to maintain.
-
----
-
-## Regional Pricing and Discounts
-
-Discounts can work alongside regional pricing.
-
-For example:
-
-```text
-Nigeria
-
-Regular Price
-₦15,000
-
-Discount
-20%
-
-Effective Price
-₦12,000
-```
-
-Another market can have its own configured price and applicable promotion.
-
-```text
-United States
-
-Regular Price
-$20
-
-Discount
-20%
-
-Effective Price
-$16
-```
-
-The discount strategy should therefore be considered together with your regional pricing strategy.
-
-See:
-
-**[Discounts →](./discounts.md)**
-
----
-
-## Regional Pricing and Price Changes
-
-Markets evolve.
-
-You may need to change the price of a package in one country without changing the price everywhere else.
-
-For example:
-
-```text
-Before
-
-Nigeria → ₦15,000
-US      → $20
-UK      → £16
-```
-
-Later:
-
-```text
-Nigeria → ₦18,000
-US      → $20
-UK      → £16
-```
-
-The Nigerian price can change while the other markets remain unchanged.
-
-See:
-
-**[Changing Pricing →](./changing-pricing.md)**
-
----
-
-## Choosing Regional Prices
-
-Regional pricing should reflect your business strategy.
-
-Factors you may consider include:
-
-* Local purchasing power
-* Local market expectations
-* Currency
-* Payment methods
-* Taxes and fees
-* Provider costs
-* Competitive pricing
-* Your desired margins
-
-SolydFlow provides the revenue infrastructure; your business determines the pricing strategy.
-
----
-
-## Example: SaaS Across Three Markets
-
-Suppose you operate a SaaS product called **Pro Workspace**.
-
-Your structure could be:
-
-```text
-Product
-└── Pro Workspace
-    │
-    └── Professional
-        │
-        ├── Nigeria
-        │   └── ₦15,000 / month
-        │
-        ├── United States
-        │   └── $20 / month
-        │
-        └── United Kingdom
-            └── £16 / month
-```
-
-A customer purchases the Professional package.
-
-The application presents the applicable price for the customer's market.
-
-```text
-Customer
-   ↓
-Market
-   ↓
-Package
-   ↓
-Regional Price
-   ↓
-Paywall
-   ↓
-Purchase
-```
-
-The resulting transaction still belongs to the same product and package.
-
----
-
-## Example: Mobile Application
-
-A mobile application may offer a premium subscription across several countries.
-
-```text
-Product
-└── Premium
-    │
-    └── Monthly
-        │
-        ├── Nigeria
-        ├── Ghana
-        ├── Kenya
-        ├── UK
-        └── US
-```
-
-Each market can have its appropriate pricing configuration.
-
-This allows the application to expand into new markets without creating an entirely new product structure for every country.
-
----
-
-## Adding a New Market
-
-When expanding into a new country, the goal is to extend the existing monetization configuration.
-
-For example:
-
-```text
-Existing
-
-Product
-└── Pro
-    └── Monthly
-        ├── Nigeria
-        ├── US
-        └── UK
-```
-
-New market:
-
-```text
-Product
-└── Pro
-    └── Monthly
-        ├── Nigeria
-        ├── US
-        ├── UK
-        └── Ghana
-```
-
-The underlying product and package do not need to change simply because a new market was added.
-
----
-
-## Regional Pricing and Your Application Code
-
-Regional pricing is intended to keep commercial configuration out of application code where possible.
-
-Avoid scattering prices throughout your application:
-
-```text
-if (country === "NG") {
-    price = 15000;
-}
-
-if (country === "US") {
-    price = 20;
+## Anti-Pattern vs. SolydFlow Best Practice
+
+### ❌ The Anti-Pattern (Hardcoded Client-Side Logic)
+Hardcoding country codes and currency logic inside your mobile or web app breaks whenever you update pricing or add a new country:
+
+```typescript title="❌ Fragile & Hard to Maintain"
+// Avoid this:
+let price = 20; // Default USD
+let currency = "USD";
+
+if (user.country === "NG") {
+  price = 5000;
+  currency = "NGN";
+} else if (user.country === "KE") {
+  price = 500;
+  currency = "KES";
 }
 ```
 
-Instead, your application can consume the configured monetization data.
+---
 
-```text
-Application
-     ↓
-SolydFlow
-     ↓
-Product
-     ↓
-Package
-     ↓
-Applicable Price
-     ↓
-Paywall
+### ✅ The SolydFlow Pattern (Dynamic Server-Driven Offerings)
+The SDK resolves localized packages automatically based on Geo-IP and console routing rules:
+
+<Tabs>
+<TabItem value="flutter" label="Flutter" default>
+
+```dart title="lib/screens/paywall_screen.dart"
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:solydflow_flutter/solydflow_flutter.dart';
+
+Widget buildLocalizedCard(SolydPackage pkg) {
+  // SolydFlow automatically serves the correct currency & PPP amount
+  final double displayPrice = pkg.amountMinor;
+  final String formatted = NumberFormat.simpleCurrency(name: pkg.currency).format(displayPrice);
+
+  return ListTile(
+    title: Text(pkg.name),
+    subtitle: Text("$formatted / ${pkg.duration}"),
+    trailing: ElevatedButton(
+      onPressed: () => SolydFlow.purchasePackage(context, pkg.identifier),
+      child: const Text("Subscribe"),
+    ),
+  );
+}
 ```
 
-This makes pricing easier to manage as your number of markets grows.
+</TabItem>
+<TabItem value="javascript" label="JavaScript / TypeScript (Web)">
 
----
+```typescript title="src/pricing.ts"
+import { SolydFlow } from "solydflow-js";
 
-## Regional Pricing and Revenue Infrastructure
-
-Regional pricing is only one part of the complete revenue flow.
-
-```text
-Regional Pricing
-       ↓
-     Paywall
-       ↓
-    Purchase
-       ↓
-   Transaction
-       ↓
- Recovery / Truth
-       ↓
-     Enforce
-       ↓
-   Entitlement
-       ↓
-      Access
+export async function getLocalizedCheckoutOfferings() {
+  // Automatically detects user's country and returns the matched package
+  const offerings = await SolydFlow.getOfferings();
+  
+  return offerings.map((pkg) => ({
+    id: pkg.identifier,
+    name: pkg.name,
+    currency: pkg.currency,
+    amount: (pkg.is_upgrade ? pkg.calculated_amount_minor : pkg.amount_minor),
+  }));
+}
 ```
 
-The price determines what the customer is charged.
-
-The transaction determines what happened with the payment.
-
-The entitlement determines what the customer receives.
+</TabItem>
+</Tabs>
 
 ---
 
-## Important Considerations
+## Regional Discounts & Promotions
 
-Regional pricing introduces additional considerations as you expand globally.
-
-You should account for:
-
-### Currency
-
-Determine which currencies you want to support in each market.
-
-### Payment Methods
-
-Different markets may prefer different payment methods.
-
-### Taxes
-
-Depending on your business model and payment setup, tax obligations may vary by market.
-
-For global commerce and compliance considerations, see:
-
-**[Global Commerce →](../global-commerce/overview.md)**
-
-### Provider Availability
-
-Not every payment provider supports every market or payment method.
-
-Your provider configuration should therefore be considered alongside your regional pricing strategy.
+You can attach promotional campaigns to specific markets without discounting global tiers. For example:
+* **Independence Day Flash Sale (Nigeria):** Apply a **30% discount** only to `pro_monthly_ngn` (reducing price from `₦5,000` to `₦3,500`).
+* **Global Base (`pro_monthly_usd`):** Remains untouched at `$4.99 USD`.
 
 ---
 
-## Keep Your Pricing Strategy Centralized
+## Related Documentation
 
-When you operate across multiple applications, centralized pricing becomes even more valuable.
-
-For example:
-
-```text
-                 SolydFlow
-                     │
-             Pricing Configuration
-                     │
-        ┌────────────┼────────────┐
-        ↓            ↓            ↓
-      App A         App B        App C
-        │            │            │
-      Nigeria       Nigeria      Nigeria
-        │            │            │
-      US             US           US
-```
-
-Instead of maintaining separate pricing logic for every application, your revenue configuration can be managed centrally.
-
----
-
-## Key Principle
-
-> **One product does not need one global price.**
-
-You can keep your product and package structure consistent while adapting prices to the markets you serve.
-
-```text
-One Product
-     ↓
-One Package
-     ↓
-Multiple Markets
-     ↓
-Appropriate Prices
-     ↓
-Local Customer Experience
-```
-
-This makes it easier to expand internationally while keeping your monetization model organized.
-
----
-
-<!-- ## Next Steps
-
-Learn how to create promotional offers:
-
-**[Discounts →](./discounts.md)**
-
-Learn how to change prices as your business evolves:
-
-**[Changing Pricing →](./changing-pricing.md)**
-
-Learn how SolydFlow supports global commerce:
-
-**[Global Commerce →](../global-commerce/overview.md)** -->
+* **[Products & Packages Architecture →](./products-and-packages.md)**
+* **[Discounts & Promotional Codes →](./discounts.md)**
+* **[Changing Pricing Safely →](./changing-pricing.md)**
+* **[Smart Payment Routing →](../enforce/smart-routing.md)**

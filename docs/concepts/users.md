@@ -1,214 +1,152 @@
-# Users
+---
+id: users
+title: Users & Customer Identity
+sidebar_label: Users
+---
 
-A **User** represents a customer in your application.
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
 
-SolydFlow uses the user identity provided by your application to associate purchases, transactions, and entitlements with the correct customer.
+# Users & Customer Identity
 
-```text
-User
- │
- ├── Purchases
- ├── Transactions
- └── Entitlements
+In SolydFlow, a **User** represents a customer within a specific project. SolydFlow does not manage authentication, passwords, or session cookies—your application remains the single source of truth for user identities.
+
+```mermaid
+graph TD
+    User["Customer"]
+
+    subgraph Transactions["Transactions"]
+        T1["₦5,000 · Paystack"]
+        T2["KSh 500 · M-Pesa"]
+    end
+
+    subgraph Entitlements["Entitlements"]
+        E1["gold_access"]
+        E2["ai_credits_pack"]
+    end
+
+    User --> Transactions
+    User --> Entitlements
+
+    Transactions --> Entitlements
 ```
-
-A user belongs to a project and serves as the link between your application and its revenue data.
 
 ---
 
-## Your Application Owns User Identity
+## Mapping Your Auth System to SolydFlow
 
-Your application remains the source of truth for user accounts.
+Pass your authenticated user's unique identifier directly to the SDK during configuration:
 
-SolydFlow does not manage:
+<Tabs>
+<TabItem value="flutter" label="Flutter (Firebase / Supabase)" default>
 
-* Authentication
-* Passwords
-* Sessions
-* User profiles
+```dart title="lib/services/auth_sync.dart"
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:solydflow_flutter/solydflow_flutter.dart';
 
-Instead, provide a stable user identifier when initializing the SDK.
-
-```javascript
-await SolydFlow.configure({
-  apiKey: "...",
-  userId: "user_12345"
-});
+Future<void> syncSolydFlowUser(User firebaseUser) async {
+  // Pass the stable Firebase UID along with customer contact data
+  await SolydFlow.configure(
+    apiKey: "sf_pk_live_44019283bc918237fa",
+    userID: firebaseUser.uid, // e.g., "z8Q9w1kLmNP45"
+    userEmail: firebaseUser.email ?? "customer@example.com",
+    userPhone: firebaseUser.phoneNumber ?? "+2348012345678",
+  );
+}
 ```
 
-The same customer should always be represented by the same `userId`.
+</TabItem>
+<TabItem value="javascript" label="JavaScript / TypeScript (Supabase / Next.js)">
+
+```typescript title="src/auth.ts"
+import { createClient } from "@supabase/supabase-js";
+import { SolydFlow } from "solydflow-js";
+
+export async function onSupabaseLogin(supabaseUser: any) {
+  await SolydFlow.configure(
+    process.env.NEXT_PUBLIC_SOLYDFLOW_KEY!,
+    supabaseUser.id, // e.g., "d3b07384-d113-4a44-9982-128492048591"
+    supabaseUser.email,
+    supabaseUser.phone // e.g., "+254712345678"
+  );
+}
+```
+
+</TabItem>
+</Tabs>
 
 ---
 
-## Optional Customer Identifiers
+## The Role of Contact Identifiers (`userEmail` & `userPhone`)
 
-In addition to a stable `userId`, you can provide customer contact information such as an email address and WhatsApp number.
+While only `userID` is strictly required to initialize the SDK, providing `userEmail` and `userPhone` is strongly recommended for African and cross-border operations:
 
-```javascript
-await SolydFlow.configure({
-  apiKey: "...",
-  userId: "user_12345",
-  email: "john@example.com",
-  phoneNumber: "+2348012345678"
-});
-```
+| Identifier | Critical Use Cases | Format Example |
+| :--- | :--- | :--- |
+| **`userID`** | Permanent primary key for ledger records, entitlement grants, and cross-device sync. | `usr_89283ab` or UUID |
+| **`userEmail`** | Gateway dispute matching, Paystack/Stripe customer receipts, and automated email recovery workflows. | `ada@company.com` |
+| **`userPhone`** | **M-Pesa STK Push execution**, WhatsApp churn recovery campaigns, and SMS transaction failover alerts. | `+2348012345678`<br/>`+254712345678` (E.164) |
 
-Providing this information allows SolydFlow to better associate payment activity with the correct customer.
-
-Where supported by your payment provider and recovery workflow, SolydFlow can also use these identifiers to assist with recovering transactions that may have been interrupted or left unresolved—for example, when a payment succeeds but your application does not receive the expected callback.
-
-```text
-Customer
-     ↓
-Payment Completed
-     ↓
-Callback Missing
-     ↓
-Recovery Process
-     ↓
-Customer Identified
-     ↓
-Transaction Recovered
-```
-
-Customer contact information is optional but recommended, especially for applications that want to maximize transaction recovery and provide a better payment experience.
+:::tip{title="M-Pesa Requirement"}
+When routing transactions through Kenyan payment rails (M-Pesa / Daraja), Safaricom requires a valid MSISDN phone number to prompt the customer for their M-Pesa PIN. Supplying `userPhone` ensures the checkout completes without prompting the user for manual entry.
+:::
 
 ---
 
+## One User, Multiple Purchases & Entitlements
 
-## Why User Identity Matters
+A single user can accumulate multiple active subscriptions, one-off purchases, and add-on permissions over time:
 
-Every purchase, transaction, and entitlement is associated with a user.
+```dart title="Checking Multiple Entitlements in Flutter"
+// Check core tier access
+bool hasPro = await SolydFlow.hasEntitlement("pro_tier");
 
-```text
-User
-    ↓
-Purchase
-    ↓
-Transaction
-    ↓
-Entitlement
-    ↓
-Access
-```
+// Check add-on feature permission
+bool hasAdvancedAnalytics = await SolydFlow.hasEntitlement("analytics_add_on");
 
-Using a consistent user identifier allows SolydFlow to:
-
-* Associate purchases with the correct customer
-* Track transaction history
-* Grant and restore entitlements
-* Recover interrupted purchases
-* Synchronize customer access across devices
-* Improve transaction recovery by matching payment activity to known customer identifiers such as email addresses and phone numbers
-
----
-
-## One User, Multiple Purchases
-
-A customer can make multiple purchases over time.
-
-```text
-User
- │
- ├── Monthly Subscription
- ├── AI Credits
- └── Premium Upgrade
-```
-
-Each purchase creates its own transaction while remaining associated with the same user.
-
----
-
-## One User, Multiple Entitlements
-
-A customer can also hold multiple entitlements.
-
-```text
-User
- │
- ├── premium_access
- ├── analytics_access
- └── ai_generation
-```
-
-Your application should check the customer's entitlements rather than relying on payment provider responses.
-
-```javascript
-const hasAccess = await SolydFlow.hasEntitlement("premium_access");
-
-if (hasAccess) {
-  unlockFeatures();
+if (hasPro && hasAdvancedAnalytics) {
+  // Render premium chart visualizations
 }
 ```
 
 ---
 
-## Use Stable User Identifiers
+## Handling Guest & Anonymous Users
 
-Always use an identifier that consistently represents the same customer.
+If your application allows users to explore before creating an account, follow the **Anonymous Aliasing Pattern**:
 
-Avoid identifiers that change between sessions or devices.
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as Guest Customer
+    participant App as Your App
+    participant SF as SolydFlow
 
-❌ Bad
+    Note over User,App: Customer starts as a guest
+    App->>SF: Configure guest ID
+    User->>App: Purchases "starter_monthly"
+    SF->>SF: Grant "starter_access" to guest
 
-```text
-Session 1 → guest_abc
-Session 2 → guest_xyz
-Session 3 → guest_123
+    Note over User,App: Customer creates an account
+    App->>SF: Configure registered ID
+    SF->>SF: Link guest account to registered account
+    SF-->>App: Return existing entitlements
 ```
-
-✅ Good
-
-```text
-user_12345
-      │
-      ├── Purchase 1
-      ├── Purchase 2
-      └── Purchase 3
-```
-
-Using different identifiers for the same customer prevents SolydFlow from correctly associating purchases and entitlements.
-
----
-
-## Users Across Projects
-
-Users are scoped to a project.
-
-The same customer can exist in multiple projects, with each project maintaining its own purchases, transactions, and entitlements.
-
-```text
-Project A
- └── user_12345
-
-Project B
- └── user_12345
-```
-
-This allows projects to operate independently while using the same identifier from your application if appropriate.
 
 ---
 
 ## Best Practices
 
-When integrating SolydFlow:
-
-* Use a permanent user identifier from your application.
-* Configure the SDK after the customer has been identified.
-* Reuse the same identifier across devices and sessions.
-* Check entitlements for access instead of transaction responses.
+* ✅ **Use Permanent IDs:** Use immutable database primary keys (UUIDs or auth provider UIDs) instead of usernames or device IDs that can change.
+* ✅ **International E.164 Phone Format:** Always prepend country codes (e.g., `+234...`, `+254...`, `+233...`) to enable cross-border mobile money routing.
+* ❌ **Never Hardcode Provider Customer IDs:** Do not use gateway customer IDs (like `CUS_paystack_xxx` or `cus_stripe_xxx`) as your primary `userID`. Gateway IDs can change if you migrate or switch routing rules.
+* ❌ **Do Not Share IDs Across Different People:** Avoid using static strings like `"guest_user"` for all unauthenticated users, as they would share one common entitlement state.
 
 ---
 
 ## Related Documentation
 
-* **[Transactions →](./transactions.md)**
-* **[Entitlements →](./entitlements.md)**
-* **[Transaction States →](./transaction-states.md)**
-
-<!-- ## Related Content
-
-Now that you understand how customers are represented in SolydFlow, the next step is to learn how monetization works.
-
-* **[Monetization →](../monetization/overview.md)** -->
-
+* **[Products & Packages Catalog →](./products.md)**
+* **[Entitlements Architecture →](./entitlements.md)**
+* **[Transactions & Consensus Ledger →](./transactions.md)**
+* **[Transaction States & Lifecycle →](./transaction-states.md)**

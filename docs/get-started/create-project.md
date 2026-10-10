@@ -1,138 +1,101 @@
-# Create a Project
+---
+id: create-project
+title: Creating a Project
+sidebar_label: Create Project
+---
 
-A SolydFlow project represents a single application or revenue environment.
+# Creating a Project
 
-Each project has its own:
+In SolydFlow, a **Project** represents an isolated revenue environment for a single application or product line. 
 
-- Payment providers
-- Products and Packages
-- API keys
-- Webhooks
-- Transactions
-- Revenue configuration
-
-For example:
+Each project maintains its own isolated:
+* Payment provider accounts and credentials (BYOK Vault)
+* Products, Packages, and Entitlements
+* API Keys and Webhook Signing Secrets
+* Customer profiles and Immutable Transaction Ledgers
+* Smart Routing and Churn Protection rules
 
 ```text
-SolydFlow
+Your SolydFlow Account
 │
-├── School App
-├── SaaS Platform
-└── Mobile App
+├── 📁 EdTech Mobile App (NGN / KES / USD)
+├── 📁 SaaS Web Platform (USD / EUR)
+└── 📁 Client Portal (Multi-currency)
 ```
 
-Each project is managed independently while remaining under the same SolydFlow account.
+---
+
+## Step 1: Create a Project in the Console
+
+1. Log in to the [SolydFlow Console](https://console.solydflow.com).
+2. In the top navigation bar, click **Projects → New Project**.
+3. Configure your project parameters:
+   * **Project Name:** Enter a recognizable name (e.g., `Apex SaaS Production`).
+   * **Base Reporting Currency:** Select the default currency for unified analytics (e.g., `NGN`, `KES`, `USD`, `GHS`, `ZAR`).
+   * **Timezone:** Set your operational timezone for accurate daily churn and revenue aggregation.
+4. Click **Create Project**.
 
 ---
 
-## Before You Begin
+## Step 2: Understand Environments (Sandbox vs. Live)
 
-You'll need a SolydFlow account.
+Every SolydFlow project operates across two distinct modes:
 
-If you don't have one yet, create one from the SolydFlow Console.
+| Environment | Purpose | Key Prefixes | Gateway Mode |
+| :--- | :--- | :--- | :--- |
+| **Sandbox (Test)** | Local development, CI/CD testing, and QA validation. | `sf_pk_test_...`<br/>`sf_test_...` | Test Keys (`sk_test_...`, `FLWSECK_TEST...`) |
+| **Live (Production)** | Real customer transactions, settlements, and live ledger records. | `sf_pk_live_...`<br/>`sf_live_...` | Live Merchant Keys (`sk_live_...`, `FLWSECK_LIVE...`) |
 
----
-
-## Create Your Project
-
-1. Sign in to the SolydFlow Console.
-2. Open **Projects**.
-3. Click **Create Project**.
-4. Enter your project name.
-5. Choose the environment.
-6. Create the project.
-
-Once created, you can begin configuring your revenue infrastructure.
+You can toggle between **Sandbox** and **Live** from the top bar of your SolydFlow Console at any time.
 
 ---
 
-## Choose an Environment
+## Step 3: Retrieve Your Project Credentials
 
-Every project includes two environments:
+Navigate to **Project Settings → API Management** to view your keys:
 
-```text
-Sandbox
-    ↓
-Build & Test
-    ↓
-Live
+### 1. Publishable Key (`sf_pk_...`)
+* **Test:** `sf_pk_test_a8f93b1c8e924a1b82`
+* **Live:** `sf_pk_live_44019283bc918237fa`
+* **Usage:** Client-side SDKs (Flutter, React, Vue, Next.js, iOS, Android). Safe to ship inside public application builds.
+
+### 2. Webhook Signing Secret (`sf_...`)
+* **Test:** `sf_test_sec_7719283bc4`
+* **Live:** `sf_live_sec_1029384bc9`
+* **Usage:** Backend server environments only (Node.js, Python, Supabase, PHP). Used to cryptographically verify incoming `X-SolydFlow-Signature` webhook headers.
+
+:::danger{title="Keep Backend Secrets Confidential"}
+
+Never embed `sf_live_...` secrets or payment gateway secret keys inside mobile binaries or frontend client bundles. Doing so exposes your ledger controls and webhook verification keys.
+:::
+
+---
+
+## Step 4: Add Gateway Keys to the Credentials Vault
+
+SolydFlow utilizes a **Bring Your Own Keys (BYOK)** architecture. SolydFlow does not hold your funds—payments settle directly into your merchant accounts.
+
+1. In the console sidebar, open **Settings → API Credentials Vault**.
+2. Expand the gateway you want to connect (e.g., Paystack, Flutterwave, Stripe).
+3. Enter both your **Test** and **Live** provider secret keys.
+4. Click **Save Encrypted Configuration** (all keys are encrypted at rest using AES-256-GCM).
+
+---
+
+## Multi-Project Workflows
+
+If you manage multiple independent applications or distinct staging environments, create separate projects:
+
+```mermaid
+flowchart TD
+    Account[Your Organization Account]
+    Account --> Proj1[Project: FinTech Mobile App]
+    Account --> Proj2[Project: SaaS Web Dashboard]
+    Account --> Proj3[Project: Staging / QA Environment]
+    
+    Proj1 --> Keys1[Keys: sf_pk_live_mobile...]
+    Proj2 --> Keys2[Keys: sf_pk_live_web...]
+    Proj3 --> Keys3[Keys: sf_pk_test_staging...]
 ```
 
-Use **Sandbox** while developing and **Live** when you're ready to process real transactions.
-
-> **Important:** Never use Live credentials during development.
-
----
-
-## Project Credentials
-
-Each project includes its own API credentials.
-
-Use:
-
-- Sandbox credentials for testing
-- Live credentials for production
-
-Keep secret credentials on your backend and never expose them in client-side applications.
-
-**[Configure SolydFlow →](./configure-solydflow.md)**
-
----
-
-## What's Next?
-
-After creating your project, the typical setup is:
-
-```text
-Create Project
-      ↓
-Connect Payment Provider
-      ↓
-Create Product
-      ↓
-Create Package
-      ↓
-Create Entitlement
-      ↓
-Install SDK
-      ↓
-Test in Sandbox
-```
-
-Each step has its own guide:
-
-- **[Payment Providers →](../payment-providers/overview.md)**
-- **[Products →](../concepts/products.md)**
-- **[Packages →](../concepts/packages.md)**
-- **[Entitlements →](../concepts/entitlements.md)**
-- **[Install SDK →](./install-sdk.md)**
-
----
-
-## Multiple Projects
-
-Create separate projects for different applications.
-
-For example:
-
-```text
-Your Account
-│
-├── SolydHome
-├── SolydGuide
-├── Client Portal
-└── Mobile App
-```
-
-Each project has its own transactions, providers, credentials, and revenue configuration.
-
----
-
-## Related Documentation
-
-- **[Projects →](../concepts/projects.md)**
-- **[Payment Providers →](../payment-providers/overview.md)**
-
-<!-- ## Related Content
-
-**[Install the SDK →](./install-sdk.md)** -->
+This guarantees that customer IDs, subscription lifecycles, and financial ledgers never overlap across platforms.

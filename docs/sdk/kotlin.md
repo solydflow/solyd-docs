@@ -1,175 +1,87 @@
-# Kotlin
+---
+id: kotlin
+title: Kotlin SDK (Android)
+sidebar_label: Kotlin (Android)
+---
 
-The SolydFlow Kotlin SDK is currently **under development**.
+# Kotlin SDK (Android)
 
-The integration will bring SolydFlow's revenue infrastructure to native Android applications.
+:::info{title="Status: Under Active Development 🚧"}
+The native **`com.solydflow.android`** package is currently in private beta testing. 
 
-This page will be updated as the Kotlin SDK becomes available, including installation, configuration, API usage, and Android-specific integration requirements.
+If you are shipping an Android application today, full Android production support is available through our **[Flutter Mobile SDK](./flutter.md)**.
+:::
 
 ---
 
-## Planned Integration
+## What to Expect
 
-The Kotlin SDK will connect native Android applications to the SolydFlow platform.
+The native Kotlin SDK will bring SolydFlow's billing infrastructure directly to modern Android applications, featuring:
 
-The integration will follow the same SolydFlow revenue model used by the existing SDK integrations:
+* **Jetpack Compose Ready:** Reactive UI state bindings and lifecycle-aware composables.
+* **Kotlin Coroutines & Flow:** Idiomatic `suspend` functions for seamless background network execution.
+* **EncryptedSharedPreferences Caching:** Hardware-backed AES-256 local storage for instant `<5ms` offline gating.
+* **Google Play Billing & African Rails:** Unifies Google Play In-App Billing alongside Pan-African gateways (M-Pesa, Paystack, Monnify).
 
-```text id="m0w3tg"
-Android App
-     ↓
-SolydFlow Kotlin SDK
-     ↓
-SolydFlow Platform
-     ↓
-Payment Providers
-     ↓
-Payment Verification
-     ↓
-Entitlement Activation
-     ↓
-Premium Features
+---
+
+## Planned API Preview
+
+The Kotlin SDK is designed around modern Android Jetpack architecture:
+
+```kotlin title="Planned Kotlin Interface Preview"
+package com.example.myapp
+
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.lifecycle.lifecycleScope
+import com.solydflow.android.SolydFlow
+import kotlinx.coroutines.launch
+
+class MainActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        lifecycleScope.launch {
+            // 1. Initialize SolydFlow
+            SolydFlow.configure(
+                context = applicationContext,
+                apiKey = "sf_pk_live_44019283bc918237fa",
+                userID = "usr_supabase_991823",
+                userEmail = "customer@example.com",
+                userPhone = "+2348012345678"
+            )
+
+            // 2. Fast Offline Check (<5ms from Encrypted Storage)
+            val isPro = SolydFlow.hasEntitlement("pro_access")
+            if (isPro) {
+                unlockProFeatures()
+            }
+        }
+    }
+
+    private fun handleUpgrade() {
+        lifecycleScope.launch {
+            try {
+                // 3. Launch Native Purchase Flow
+                val customerInfo = SolydFlow.purchasePackage(this@MainActivity, "pro_monthly")
+                if (customerInfo?.activeEntitlements?.get("pro_access") == true) {
+                    unlockProFeatures()
+                }
+            } catch (e: Exception) {
+                // Handle decline or network error
+            }
+        }
+    }
+}
 ```
 
 ---
 
-## Core SolydFlow Concepts
+## Production Alternatives for Android Today
 
-The Kotlin integration will work with the same core concepts used throughout SolydFlow:
+If you are building for Android today:
 
-* **Users** — identify customers within SolydFlow.
-* **Products** — define what is being sold.
-* **Packages** — represent the purchasable plans.
-* **Entitlements** — represent the access granted after purchase.
-* **Transactions** — represent payment activity.
-* **Payment Providers** — provide the underlying payment rails.
-* **Transaction Recovery** — restores successful payments when an application is interrupted.
-* **Offline Entitlement Access** — allows applications to determine access when connectivity is unstable.
-
-See the relevant concept pages for the definitions of these components.
-
----
-
-## Android Integration
-
-When the Kotlin SDK is ready, this page will document:
-
-* Installation
-* Android project configuration
-* SDK initialization
-* User identification
-* Package retrieval
-* Purchase flows
-* Entitlement checks
-* Customer state
-* Offline entitlement access
-* Transaction recovery
-* Google Play Billing integration
-
----
-
-## Google Play Billing
-
-Google Play Billing is currently listed by SolydFlow as **in testing**. ([docs.solydflow.com](https://docs.solydflow.com/))
-
-The Kotlin SDK will provide the native Android integration for this payment path when the SDK is ready.
-
-The current documentation therefore does not provide Kotlin implementation instructions.
-
----
-
-## Packages and Entitlements
-
-The Kotlin integration will use SolydFlow's existing package and entitlement model.
-
-For example:
-
-```text id="z6ksxg"
-gold_monthly
-      ↓
-gold_access
-```
-
-and:
-
-```text id="m0asq5"
-gold_yearly
-      ↓
-gold_access
-```
-
-Both packages can provide the same entitlement.
-
-The application uses the entitlement to determine access to premium features.
-
-See:
-
-[Packages →](../concepts/packages.md)
-
-[Entitlements →](../concepts/entitlements.md)
-
----
-
-## Transaction Recovery
-
-Transaction recovery is a core part of SolydFlow's mobile revenue infrastructure.
-
-The Kotlin integration will use the SolydFlow platform's transaction recovery and entitlement synchronization capabilities once the SDK is available.
-
-The intended flow is:
-
-```text id="2d3t8e"
-Payment
-   ↓
-Transaction Processing
-   ↓
-SolydFlow Verification
-   ↓
-Entitlement
-   ↓
-Android Application
-```
-
-See:
-
-[Transaction Recovery →](../recover/transaction-recovery.md)
-
----
-
-## SDK Status
-
-**Status:** 🚧 Under Development
-
-The Kotlin SDK documentation will be expanded when the SDK is ready for integration.
-
-At that point, this page will contain the complete Android setup and API reference.
-
-For currently available SDK integrations, see:
-
-* [JavaScript →](./javascript.md)
-* [Flutter →](./flutter.md)
-
----
-
-## Related Documentation
-
-[SDK Overview →](./overview.md)
-
-[JavaScript →](./javascript.md)
-
-[Flutter →](./flutter.md)
-
-[React Native →](./react-native.md)
-
-[Swift →](./swift.md)
-
-[Products →](../concepts/products.md)
-
-[Packages →](../concepts/packages.md)
-
-[Entitlements →](../concepts/entitlements.md)
-
-[Transactions →](../concepts/transactions.md)
-
-[Transaction Recovery →](../recover/transaction-recovery.md)
-
-[Google Play →](../payment-providers/google-play.md)
+* **[Flutter Mobile SDK →](./flutter.md)** (Production-ready for Android API Level 21+ with local caching and Smart Routing).
+* **[JavaScript SDK →](./javascript.md)** (Production-ready for web portals and hybrid apps).
+* **[Google Play Billing Overview →](../payment-providers/google-play.md)**

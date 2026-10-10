@@ -1,45 +1,129 @@
-# Simulate Failures
+---
+id: simulate-failures
+title: Simulating Payment Failures
+sidebar_label: Simulate Failures
+---
 
-The Solyd Simulator can be used to test payment outcomes exposed by the configured payment provider's test environment.
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
 
-The exact outcomes available depend on the payment provider.
+# Simulating Payment Failures
 
-For example, a Paystack test checkout can provide test outcomes including:
+Testing failure states is just as important as testing successful purchases. You must ensure that declined cards, cancelled PIN prompts, and insufficient funds do not grant free access or leave users stranded with frozen screens.
 
-* Success
-* Bank Authentication
-* Declined
+```text
+[1. Enter Decline Test Card] ➔ [2. Provider Returns Decline] ➔ [3. SolydFlow Commits FAILED_DECLINED] ➔ [4. App Displays Retry UI]
+```
 
-These outcomes allow you to observe how the SolydFlow revenue flow behaves when the provider does not immediately complete a successful payment.
+---
 
-## Provider Test Outcomes
+## Failure Trigger Matrix Across Gateways
 
-When a test checkout is opened, select the available test outcome provided by the payment provider.
+Use these test card numbers and simulator prompts to test specific failure conditions:
 
-The simulator records the checkout activity and routes the transaction through the project's configured provider.
+| Failure Scenario | Gateway | Test Input / Card Number | CVV / PIN | Expected State |
+| :--- | :--- | :--- | :--- | :--- |
+| **Card Declined** | **Paystack** | `4084 0841 0000 0001` | `408` | **`FAILED_DECLINED`** |
+| **Insufficient Balance** | **Paystack** | `4084 0841 0000 0002` | `408` | **`FAILED_DECLINED`** |
+| **Generic Card Decline**| **Stripe** | `4000 •••• •••• 0002` | `123` | **`FAILED_DECLINED`** |
+| **Insufficient Funds** | **Stripe** | `4000 •••• •••• 0996` | `123` | **`FAILED_DECLINED`** |
+| **Declined Card** | **Flutterwave**| `4444 •••• •••• 4441` | `123` | **`FAILED_DECLINED`** |
+| **User Cancelled PIN** | **M-Pesa** | Select "Cancel" on SIM simulator | `ResultCode: 1032` | **`FAILED_DECLINED`** |
+| **Wrong M-Pesa PIN** | **M-Pesa** | Enter invalid 4-digit PIN | `ResultCode: 2001` | **`FAILED_DECLINED`** |
 
-The routing log can be used to confirm which provider handled the checkout.
+---
 
-## Important Distinction
+## How to Simulate Failures in the Simulator
 
-Provider test outcomes and SolydFlow failure simulation are different.
+1. Open the [SolydFlow Console](https://console.solydflow.com) and navigate to **Solyd Simulator**.
+2. Ensure **Execution Mode** is set to `Test (Sandbox)`.
+3. Select your simulated currency (e.g. `NGN`, `USD`, or `KES`).
+4. Click **Simulate Checkout** on your package.
+5. In the payment modal, enter one of the decline cards from the matrix above (e.g., Paystack `4084 0841 0000 0001`).
+6. Click **Pay**. The gateway will immediately reject the payment.
 
-A provider may expose a test outcome such as `Declined`, while SolydFlow may have additional failure-handling and recovery behavior elsewhere in the platform.
+---
 
-Use the provider's test environment to test provider-specific payment outcomes.
+## Post-Failure Verification Checklist
 
-Use the SolydFlow recovery and webhook testing tools to test the corresponding SolydFlow failure-handling workflows.
+After simulating a decline, verify the following in the SolydFlow Console:
+
+```text
+┌───────────────────────────────────────┬────────────────────────────────────────────────────────┐
+│ Console Checkpoint                    │ Expected Behavior                                      │
+├───────────────────────────────────────┼────────────────────────────────────────────────────────┤
+│ **1. Transactions Ledger**            │ State is recorded as **`FAILED_DECLINED`**.            │
+├───────────────────────────────────────┼────────────────────────────────────────────────────────┤
+│ **2. Customer Directory**             │ Entitlement remains **`null` / inactive**.             │
+├───────────────────────────────────────┼────────────────────────────────────────────────────────┤
+│ **3. Outbound Webhooks**              │ **No** `subscription_started` webhook was fired.       │
+└───────────────────────────────────────┴────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Handling Failures in Application Code
+
+Your client application should handle the three possible checkout outcomes cleanly:
+
+<Tabs>
+<TabItem value="flutter" label="Flutter" default>
+
+```dart title="lib/screens/checkout_screen.dart"
+Future<void> handlePurchase(BuildContext context, String packageId) async {
+  try {
+    final CustomerInfo? info = await SolydFlow.purchasePackage(context, packageId);
+
+    // Case 1: User voluntarily dismissed or cancelled modal
+    if (info == null) {
+      debugPrint("User dismissed the checkout sheet.");
+      return;
+    }
+
+    // Case 2: Success
+    if (info.activeEntitlements["pro_access"] == true) {
+      Navigator.pop(context);
+    }
+  } catch (error) {
+    // Case 3: Gateway Declined / Network Failure
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text("Payment unsuccessful: $error"),
+        backgroundColor: Colors.red,
+        action: SnackBarAction(
+          label: "Try Another Card",
+          onPressed: () => handlePurchase(context, packageId),
+        ),
+      ),
+    );
+  }
+}
+```
+
+</TabItem>
+<TabItem value="javascript" label="JavaScript / TypeScript (Web)">
+
+```typescript title="src/checkout.ts"
+import { SolydFlow } from "solydflow-js";
+
+async function buyPlan(packageId: string) {
+  try {
+    await SolydFlow.purchasePackage(packageId, "+2348012345678");
+  } catch (err: any) {
+    // Graceful error prompt
+    alert(`Payment could not be completed: ${err.message}`);
+  }
+}
+```
+
+</TabItem>
+</Tabs>
+
+---
 
 ## Related Documentation
 
-[Sandbox Overview →](./overview.md)
-
-[Test Transactions →](./test-transactions.md)
-
-[Testing Recovery →](./testing-recovery.md)
-
-[Transaction States →](../concepts/transaction-states.md)
-
-[Transaction Recovery →](../recover/transaction-recovery.md)
-
-[Failed Webhooks →](../recover/failed-webhooks.md)
+* **[Sandbox Overview →](./overview.md)**
+* **[Testing Successful Transactions →](./test-transactions.md)**
+* **[Testing Recovery Workflows →](./testing-recovery.md)**
+* **[Transaction States Lifecycle →](../concepts/transaction-states.md)**

@@ -1,332 +1,219 @@
-# JavaScript
+---
+id: javascript
+title: JavaScript / TypeScript SDK
+sidebar_label: JavaScript / Web
+---
 
-SolydFlow provides a lightweight, framework-agnostic JavaScript SDK for web applications, including React, Vue, Next.js, and Vanilla JavaScript applications.
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
 
-The SDK provides the same core revenue capabilities used across SolydFlow, including:
+# JavaScript / TypeScript SDK
 
-* Dynamic pricing
-* Purchasing Power Parity (PPP)
-* Smart Upgrade Credits
-* Entitlement management
-* Subscription lifecycle tracking
+The **`solydflow-js`** SDK connects modern web applications (Next.js, React, Vue, Nuxt, Svelte, or Vanilla JS) to SolydFlow's unified revenue infrastructure.
 
-Web applications use a separate hosted checkout flow while maintaining the same SolydFlow pricing, entitlement, and upgrade logic across platforms.
+```text
+[1. Install Package] ➔ [2. Initialize Client] ➔ [3. Render Paywall or Fetch Offerings] ➔ [4. Hosted Checkout Redirect]
+```
+
+It delivers the same multi-currency pricing, Purchasing Power Parity (PPP), and upgrade calculations as mobile apps, while handling web checkouts through secure, Smart-Routed payment pages.
 
 ---
 
-## Installation
+## 1. Installation
 
-Install `solydflow-js` using your preferred package manager.
-
-### npm
+<Tabs>
+<TabItem value="npm" label="npm" default>
 
 ```bash
 npm install solydflow-js
 ```
 
-### Yarn
+</TabItem>
+<TabItem value="yarn" label="Yarn">
 
 ```bash
 yarn add solydflow-js
 ```
 
-### pnpm
+</TabItem>
+<TabItem value="pnpm" label="pnpm">
 
 ```bash
 pnpm add solydflow-js
 ```
 
+</TabItem>
+</Tabs>
+
+:::info{title="TypeScript Support Included"}
+`solydflow-js` ships with native TypeScript definitions. No separate `@types/solydflow-js` package is required.
+:::
+
 ---
 
-## Initialization
+## 2. Initialization
 
-Import `SolydFlow` and initialize it with your project's public key and the current user's information.
+Initialize SolydFlow as early as possible in your web app (e.g. inside `_app.tsx`, a root layout, or an auth context):
 
-```javascript
+```typescript title="src/index.ts"
 import { SolydFlow } from "solydflow-js";
 
 await SolydFlow.configure(
-  "sf_pk_live_YOUR_PUBLIC_KEY",
-  "user_12345",
-  "user@mail.com"
+  process.env.NEXT_PUBLIC_SOLYDFLOW_KEY!, // sf_pk_live_... or sf_pk_test_...
+  "usr_supabase_991823",                 // User ID from your database / auth
+  "customer@example.com",                // Customer email (for receipts & recovery)
+  "+2348012345678"                       // E.164 phone (Required for M-Pesa STK push)
 );
 ```
 
-Initialize SolydFlow as early as possible in your web application's lifecycle.
+---
 
-The public key is obtained from your SolydFlow project dashboard.
+## 3. Choose Your Paywall Strategy
+
+| Strategy | When to Use | Setup Effort |
+| :--- | :--- | :--- |
+| **Option A: Drop-In Paywall** | You want a high-converting, console-managed paywall rendered into a `<div>`. | **2 lines of code** |
+| **Option B: Custom UI (React / Next.js)** | You want full CSS control to match your existing design system. | Full component |
 
 ---
 
-## Integration Strategies
+### Option A: Drop-In Paywall
 
-The JavaScript SDK supports two approaches:
+Renders the paywall designed and published in your SolydFlow Console directly into your webpage:
 
-| Approach        | Best for                                                |
-| --------------- | ------------------------------------------------------- |
-| Drop-In Paywall | Fast integration with dashboard-managed pricing         |
-| Custom UI       | Complete control over pricing and checkout presentation |
-
-Both approaches use the same SolydFlow pricing, entitlement, and checkout infrastructure.
-
----
-
-## Drop-In Paywall
-
-The Drop-In Paywall provides a responsive pricing experience that stays synchronized with the configuration in the SolydFlow Console.
-
-It handles:
-
-* Purchasing Power Parity pricing
-* Smart Upgrade Credits
-* Payment routing rules
-* Checkout initiation
-* Product rendering
-
-### Create a Container
-
-Add a container to the page:
-
-```html
+```html title="index.html"
+<!-- 1. Add container -->
 <div id="solydflow-paywall-container"></div>
+
+<!-- 2. Render paywall -->
+<script type="module">
+  import { SolydFlow } from "solydflow-js";
+
+  await SolydFlow.configure(
+    "sf_pk_test_a8f93b1c8e924a1b82",
+    "usr_12345",
+    "customer@example.com"
+  );
+
+  await SolydFlow.renderPaywall("solydflow-paywall-container");
+</script>
 ```
 
-### Render the Paywall
+---
 
-```javascript
+### Option B: Custom UI (React / Next.js Example)
+
+Fetch offerings dynamically and bind them to your own components. SolydFlow automatically localizes currency and computes pro-rated upgrade credits:
+
+```tsx title="components/PricingSection.tsx"
+import React, { useEffect, useState } from "react";
+import { SolydFlow, SolydPackage } from "solydflow-js";
+
+export function PricingSection() {
+  const [packages, setPackages] = useState<SolydPackage[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadOfferings() {
+      try {
+        const offerings = await SolydFlow.getOfferings();
+        setPackages(offerings);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadOfferings();
+  }, []);
+
+  const handleSubscribe = async (packageId: string) => {
+    try {
+      // Automatically redirects browser to the Smart-Routed payment rail
+      await SolydFlow.purchasePackage(packageId, "+2348012345678");
+    } catch (err: any) {
+      alert(`Checkout failed: ${err.message}`);
+    }
+  };
+
+  if (loading) return <div>Loading localized pricing...</div>;
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto p-4">
+      {packages.map((pkg) => {
+        const price = (pkg.is_upgrade ? pkg.calculated_amount_minor : pkg.amount_minor);
+        
+        return (
+          <div key={pkg.identifier} className="border rounded-xl p-6 shadow-sm flex flex-col justify-between">
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <h3 className="text-xl font-bold">{pkg.name}</h3>
+                {pkg.is_upgrade && (
+                  <span className="bg-green-100 text-green-700 text-xs px-2 py-1 rounded font-semibold">
+                    UPGRADE CREDIT APPLIED
+                  </span>
+                )}
+              </div>
+              <p className="text-3xl font-extrabold my-4">
+                {pkg.currency} {price.toFixed(2)}
+                <span className="text-sm font-normal text-gray-500"> / {pkg.duration}</span>
+              </p>
+            </div>
+
+            <button
+              onClick={() => handleSubscribe(pkg.identifier)}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg transition"
+            >
+              {pkg.is_upgrade ? "Upgrade Plan" : "Subscribe Now"}
+            </button>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+```
+
+---
+
+## 4. Checking Access
+
+Use `hasEntitlement()` to verify whether the logged-in user has access:
+
+```typescript title="src/guards/auth.ts"
 import { SolydFlow } from "solydflow-js";
 
-async function showPricing() {
-  await SolydFlow.configure(
-    "sf_pk_live_YOUR_PUBLIC_KEY",
-    "user_12345",
-    "user@mail.com"
-  );
-
-  await SolydFlow.renderPaywall(
-    "solydflow-paywall-container"
-  );
-}
-```
-
-The SDK loads and renders the paywall configured in the SolydFlow Console.
-
-### When to Use the Drop-In Paywall
-
-Use it when:
-
-* You want the fastest implementation.
-* Product teams manage pricing and promotions.
-* Paywall updates should not require a website deployment.
-* You want built-in pricing optimization and localization.
-
----
-
-## Custom UI
-
-If you want complete control over your pricing experience, you can retrieve the packages from SolydFlow and render them using your own components.
-
-```javascript
-async function fetchRawPackages() {
-  const offerings = await SolydFlow.getOfferings();
-
-  offerings.forEach(pkg => {
-    if (pkg.is_upgrade) {
-      console.log(
-        `Upgrade for ${pkg.currency} ${
-          pkg.calculated_amount_kobo / 100
-        }`
-      );
-    } else {
-      console.log(
-        `Standard Price: ${pkg.currency} ${
-          pkg.amount_kobo / 100
-        }`
-      );
-    }
-  });
-}
-```
-
-SolydFlow continues to calculate:
-
-* Purchasing Power Parity pricing
-* Smart Upgrade Credits
-* Regional pricing adjustments
-
-Your application is responsible for rendering the UI, while SolydFlow handles the pricing logic, checkout routing, and entitlement management.
-
----
-
-## Checking Entitlements
-
-Use `hasEntitlement()` to determine whether the current user has access to an entitlement.
-
-```javascript
-async function checkAccess() {
-  const isGold =
-    await SolydFlow.hasEntitlement("gold_access");
-
-  if (isGold) {
-    console.log(
-      "Welcome to the premium dashboard!"
-    );
-  } else {
-    // Redirect to pricing page
+export async function checkProAccess(): Promise<boolean> {
+  const isPro = await SolydFlow.hasEntitlement("pro_access");
+  
+  if (!isPro) {
+    window.location.href = "/pricing";
+    return false;
   }
+  return true;
 }
 ```
 
-This can be used to control access to premium features or redirect users to your pricing experience.
-
 ---
 
-## Web Purchase Flow
+## 5. Web Purchase Flow & Fulfillment
 
-The web purchase flow differs from the mobile SDK.
-
-On mobile, the SDK waits for the purchase flow and returns updated customer information.
-
-On the web:
+Unlike mobile apps (which can wait for in-app store completion), web checkouts redirect the browser to secure payment rails (Paystack, Stripe, Flutterwave):
 
 ```text
-User
-  ↓
-Hosted Checkout
-  ↓
-Payment Completed
-  ↓
-Webhook
-  ↓
-Backend
-  ↓
-Entitlement Activated
+[User Clicks Subscribe] ➔ [Browser Redirects to Gateway] ➔ [Payment Succeeded] ➔ [Webhook Fulfills in Database]
 ```
 
-The browser is redirected to a hosted checkout page, so the web application does not wait for the payment to complete.
-
-Instead, SolydFlow notifies your backend after the transaction has been verified.
-
----
-
-## Making a Purchase
-
-When the customer selects a package, call `purchasePackage()`.
-
-```javascript
-async function handleCheckout(packageId) {
-  try {
-    await SolydFlow.purchasePackage(
-      packageId,
-      "2348012345678"
-    );
-
-    // Redirect occurs automatically.
-  } catch (error) {
-    console.error(
-      "Checkout failed:",
-      error.message
-    );
-  }
-}
-```
-
-The customer is redirected to the secure hosted checkout page automatically. Your application does not wait for the payment to complete.
-
----
-
-## Fulfilling Web Purchases
-
-Because the web checkout is hosted, your backend must receive SolydFlow webhook events to unlock subscriptions and synchronize customer access.
-
-Configure the webhook from:
-
-```text
-SolydFlow Console
-→ Projects
-→ Manage Connection
-→ Your Backend Webhook
-```
-
-Enter your backend endpoint and save the configuration.
-
-SolydFlow then sends signed webhook events when subscription activity occurs.
-
-The webhook events are:
-
-```text
-subscription_started
-subscription_renewed
-subscription_revoked
-test_event
-```
-
-See:
-
-[Event Handling →](../webhooks/event-handling.md)
-
----
-
-## Pricing and Upgrades
-
-The JavaScript SDK exposes SolydFlow's pricing calculations when using a Custom UI.
-
-Packages can contain upgrade-specific pricing:
-
-```javascript
-if (pkg.is_upgrade) {
-  console.log(
-    `Upgrade for ${pkg.currency} ${
-      pkg.calculated_amount_kobo / 100
-    }`
-  );
-}
-```
-
-This allows your application to present the price calculated by SolydFlow rather than implementing upgrade pricing logic independently.
-
----
-
-## Framework Compatibility
-
-Because `solydflow-js` is framework-agnostic, it can be used with:
-
-* React
-* Vue
-* Next.js
-* Vanilla JavaScript
-
-The SDK provides the SolydFlow integration layer while your chosen framework remains responsible for the application's UI and application state.
+1. `SolydFlow.purchasePackage(packageId)` initiates checkout and redirects the browser.
+2. The customer authorizes payment.
+3. The gateway notifies SolydFlow, and SolydFlow verifies consensus.
+4. SolydFlow delivers a signed `subscription_started` webhook to your backend server.
+5. Your backend extends the user's access date in your database.
 
 ---
 
 ## Related Documentation
 
-[SDK Overview →](./overview.md)
+* **[Flutter Mobile SDK →](./flutter.md)**
+* **[Webhook Signature Verification →](../webhooks/signature-verification.md)**
+* **[Webhook Event Handling →](../webhooks/event-handling.md)**
+* **[Regional Pricing & PPP →](../monetization/regional-pricing.md)**
 
-[Flutter →](./flutter.md)
-
-[React Native →](./react-native.md)
-
-[Webhooks →](../webhooks/overview.md)
-
-[Event Handling →](../webhooks/event-handling.md)
-
-[Packages →](../concepts/packages.md)
-
-[Entitlements →](../concepts/entitlements.md)
-
-[Paywalls →](../concepts/paywalls.md)
-
-[Pricing →](../concepts/pricing.md)
-
-[Regional Pricing →](../monetization/regional-pricing.md)
-
-<!-- ---
-
-## Next Steps
-
-Continue with:
-
-[Flutter →](./flutter.md)
- -->

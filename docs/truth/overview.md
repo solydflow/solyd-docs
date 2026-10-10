@@ -1,477 +1,82 @@
-# Truth
+---
+id: overview
+title: Truth Overview
+sidebar_label: Overview
+---
 
-Payment systems can produce conflicting information.
+# Truth Overview
 
-A payment provider may say a transaction succeeded while an application still considers it pending. A webhook may arrive late, arrive more than once, or fail completely.
-
-SolydFlow Truth is designed to help establish a reliable view of what actually happened.
+In distributed payment systems, different components often hold conflicting information. A gateway webhook may report that a charge completed, while the mobile client lost connection and still shows "Pending". Conversely, a malicious client may forge a local success callback to unlock paid features for free.
 
 ```text
-Provider
-   ↓
-Payment Events
-   ↓
-SolydFlow
-   ↓
-Transaction State
-   ↓
-Reliable Revenue Record
+[1. Collect Signals (Webhook / Client)] ➔ [2. Consensus Engine] ➔ [3. Immutable Ledger Commit] ➔ [4. Financial Truth]
 ```
 
-The goal is not simply to collect payment events.
-
-The goal is to determine the **truth of a transaction** and maintain a consistent record that the rest of the system can rely on.
+**SolydFlow Truth** is the cryptographic verification and consensus layer that establishes an indisputable record of financial reality before customer entitlements are granted or revenue is reported.
 
 ---
 
-## Why Truth Matters
+## The Zero-Trust Payment Principle
 
-Consider a payment that has already succeeded at the provider:
+Traditional architectures suffer from revenue leakage because they rely on single, unverified signals:
 
-```text
-Payment Provider
-└── Successful
-```
-
-But the application still has:
-
-```text
-Application
-└── Pending
-```
-
-This creates uncertainty.
-
-The customer may have paid, but the application does not know whether it should grant access.
-
-Without a reliable transaction state, the application may:
-
-* Grant access too early
-* Deny access to a paying customer
-* Process the same payment again
-* Record incorrect revenue
-* Create reconciliation problems
-
-SolydFlow Truth exists to reduce this uncertainty.
+| Integration Model | How It Decides Access | The Vulnerability |
+| :--- | :--- | :--- |
+| **❌ Naive Client-Side** | `if (payment.status == "success")` | **Trivial to spoof.** Users can patch mobile app binaries or replay mock HTTP responses. |
+| **❌ Naive Webhook-Only** | Grants access immediately upon receiving webhook POST. | **Vulnerable to replay attacks,** out-of-order deliveries, and spoofed payloads. |
+| **✅ SolydFlow Truth** | Holds activation until **Consensus Engine** independently verifies the transaction with the bank via REST API. | **Zero-trust.** Entitlements only unlock when independent signals achieve agreement. |
 
 ---
 
-## The Problem of Conflicting States
+## The 4 Signals of Financial Evidence
 
-A transaction can exist across several systems.
-
-```text
-Customer
-   ↓
-Application
-   ↓
-SolydFlow
-   ↓
-Payment Provider
-```
-
-Each system may have its own representation of the transaction.
-
-For example:
+To establish absolute truth, SolydFlow evaluates up to four independent data points:
 
 ```text
-Application     → Pending
-SolydFlow       → Pending
-Provider        → Successful
+┌───────────────────────────────────────┬────────────────────────────────────────────────────────┐
+│ Signal Source                         │ What SolydFlow Validates                               │
+├───────────────────────────────────────┼────────────────────────────────────────────────────────┤
+│ 1. Client Checkout Token              │ Validates session timestamp, user_id, and package SKU. │
+├───────────────────────────────────────┼────────────────────────────────────────────────────────┤
+│ 2. Inbound Gateway Webhook            │ Cryptographically validates HMAC-SHA256 signature.     │
+├───────────────────────────────────────┼────────────────────────────────────────────────────────┤
+│ 3. Direct Server-to-Server REST Query │ Queries gateway using your encrypted Vault secret key. │
+├───────────────────────────────────────┼────────────────────────────────────────────────────────┤
+│ 4. Sweeper Reconciliation Log         │ Reconciles delayed clearing (e.g. NIBSS bank transfers)│
+└───────────────────────────────────────┴────────────────────────────────────────────────────────┘
 ```
 
-The systems are not necessarily synchronized at the same moment.
-
-This means a transaction's state needs to be verified rather than assumed.
+When these signals agree on the currency, amount, and reference, SolydFlow records a `SETTLED_CONSENSUS` event. Only then is access granted.
 
 ---
 
-## Truth Is More Than a Webhook
+## Real-World Example: Spoofed Webhook Defense
 
-A webhook is an important source of information, but it is not necessarily the complete representation of a transaction.
+Consider an attacker attempting to gain free access to a ₦50,000 annual subscription:
 
-For example:
-
-```text
-Provider
-   ↓
-Successful Transaction
-   ↓
-Webhook
-   X
-```
-
-The transaction may still be successful even though the webhook was not received.
-
-Similarly, receiving a webhook does not mean that the application should blindly trust every value without validation.
-
-The transaction needs to be evaluated using the available evidence.
+1. The attacker crafts a forged `charge.success` webhook payload with `amount: 5000000` and posts it to your server.
+2. **SolydFlow Truth intercepts:** Entitlement activation is placed on hold.
+3. The Consensus Engine makes an authenticated query directly to Paystack's API (`GET /transaction/verify/:ref`) using your encrypted Vault key.
+4. Paystack returns: *"Transaction reference not found"* or *"Amount was ₦50, not ₦50,000"*.
+5. SolydFlow flags a **State Mismatch**, rejects the fraudulent event, and leaves features locked.
 
 ---
 
-## Sources of Transaction Evidence
+## The 5 Pillars of Truth
 
-Depending on the payment provider and integration, transaction information may come from sources such as:
-
-```text
-Transaction
-   │
-   ├── Payment Request
-   ├── Provider Response
-   ├── Provider Webhook
-   ├── Transaction Verification
-   └── Recovery Events
-```
-
-These sources help SolydFlow determine the current state of the transaction.
-
-The exact sources available depend on the provider integration.
+| Module | What It Does | Why It Matters |
+| :--- | :--- | :--- |
+| **[Transaction Verification](./transaction-verification.md)** | Direct server-to-server validation against gateway APIs. | Bypasses client spoofing and unverified payloads. |
+| **[Consensus Engine](./consensus-engine.md)** | Multi-signal agreement logic between webhooks and REST APIs. | Eliminates single points of failure in billing logic. |
+| **[Transaction Ledger](./transaction-ledger.md)** | Append-only, tamper-proof audit trail of all state transitions. | Provides full auditability for finance and accounting teams. |
+| **[State Mismatches](./state-mismatches.md)** | Automated detection when bank records conflict with app state. | Prevents granting access for refunded or declined transactions. |
+| **[Reconciliation](./reconciliation.md)** | Automated cross-checking between bank payouts and app revenue. | Ensures bank settlements match ledger revenue exactly. |
 
 ---
 
-## Transaction Verification
-
-When the state of a transaction is uncertain, SolydFlow can verify the transaction with the payment provider where supported.
-
-Conceptually:
-
-```text
-Transaction
-     ↓
-Uncertain State
-     ↓
-Provider Verification
-     ↓
-Verified State
-```
-
-For example:
-
-```text
-SolydFlow
-└── Pending
-
-Provider Verification
-└── Successful
-```
-
-The verified result can then be used to resolve the transaction.
-
-See:
-
-[Transaction Verification →](./transaction-verification.md)
-
----
-
-## Consensus Engine
-
-When transaction information comes from multiple sources, SolydFlow needs a consistent way to evaluate those signals.
-
-The consensus engine is responsible for helping determine the appropriate transaction state from available information.
-
-Conceptually:
-
-```text
-Webhook ──────────┐
-                  │
-Provider API ─────┼──→ Consensus ──→ Transaction State
-                  │
-Recovery ─────────┘
-```
-
-The purpose is not to treat every signal as equally authoritative in every situation.
-
-Instead, the available evidence must be evaluated according to the transaction and provider context.
-
-See:
-
-[Consensus Engine →](./consensus-engine.md)
-
----
-
-## Transaction Ledger
-
-Once transaction information has been resolved, it needs to be recorded.
-
-The transaction ledger provides a durable representation of transaction activity.
-
-```text
-Transaction
-   ↓
-State Changes
-   ↓
-Ledger
-```
-
-A transaction may therefore have a history such as:
-
-```text
-Created
-  ↓
-Pending
-  ↓
-Verification
-  ↓
-Successful
-```
-
-This history can help explain how the transaction reached its current state.
-
-See:
-
-[Transaction Ledger →](./transaction-ledger.md)
-
----
-
-## State Mismatches
-
-A state mismatch occurs when different systems have different views of the same transaction.
-
-For example:
-
-```text
-Provider
-└── Successful
-
-SolydFlow
-└── Pending
-```
-
-Or:
-
-```text
-Provider
-└── Failed
-
-Application
-└── Successful
-```
-
-These mismatches need to be detected and resolved carefully.
-
-See:
-
-[State Mismatches →](./state-mismatches.md)
-
----
-
-## Reconciliation
-
-Reconciliation addresses differences between transaction records.
-
-For example:
-
-```text
-Payment Provider
-       ↓
-Provider Records
-       │
-       │
-       ↓
-SolydFlow Ledger
-```
-
-If the records do not agree, reconciliation can identify the difference and provide the information needed to resolve it.
-
-See:
-
-[Reconciliation →](./reconciliation.md)
-
----
-
-## Truth and Recovery
-
-Truth and recovery work together.
-
-Recovery deals with transactions that have not progressed as expected.
-
-Truth determines what the transaction actually represents once sufficient evidence is available.
-
-```text
-Recovery
-   ↓
-Investigate
-   ↓
-Verify
-   ↓
-Truth
-   ↓
-Resolved Transaction
-```
-
-For example, a missing webhook may trigger recovery:
-
-```text
-Webhook Missing
-      ↓
-Recovery
-      ↓
-Provider Verification
-      ↓
-Successful
-```
-
-The verified provider state can then become part of the transaction's resolved state.
-
-See:
-
-[Recovery Workflows →](../recover/recovery-workflows.md)
-
----
-
-## Truth and Entitlements
-
-Transaction truth is important because other parts of the application depend on it.
-
-For example:
-
-```text
-Verified Transaction
-       ↓
-Entitlement
-       ↓
-Application Access
-```
-
-If the transaction state is incorrect, the entitlement state can also become incorrect.
-
-This is why entitlement decisions should be based on the appropriate resolved transaction state rather than simply on whether a webhook was received.
-
-See:
-
-[Entitlements →](../concepts/entitlements.md)
-
----
-
-## Truth and Revenue
-
-A reliable transaction record is also important for understanding revenue.
-
-For example:
-
-```text
-Payment
-   ↓
-Transaction
-   ↓
-Verified State
-   ↓
-Ledger
-   ↓
-Revenue Records
-```
-
-When transaction states are inconsistent, revenue reporting can also become inconsistent.
-
-Truth therefore provides an important foundation for reliable revenue infrastructure.
-
----
-
-## Truth Is Not the Same as "Whatever the Provider Says"
-
-The payment provider is an important source of transaction information, but SolydFlow also has to maintain its own transaction model.
-
-The system needs to account for:
-
-* Provider responses
-* Webhook events
-* Transaction history
-* Recovery operations
-* Existing transaction state
-* Provider-specific behavior
-
-The result should be a consistent transaction record that the rest of the SolydFlow system can use.
-
----
-
-## A Unified Transaction View
-
-The objective is to provide the application with one coherent view:
-
-```text
-             Payment Provider
-                    │
-        ┌───────────┼───────────┐
-        ↓           ↓           ↓
-     Response     Webhook     Verification
-        │           │           │
-        └───────────┼───────────┘
-                    ↓
-               SolydFlow
-                    ↓
-             Truth Layer
-                    ↓
-           Transaction State
-                    ↓
-       ┌────────────┼────────────┐
-       ↓            ↓            ↓
-   Entitlement    Ledger     Reconciliation
-```
-
-The application should not need to reconstruct this state from multiple provider-specific signals itself.
-
----
-
-## The Truth Workflow
-
-At a high level:
-
-```text
-Payment Event
-     ↓
-Collect Evidence
-     ↓
-Evaluate Evidence
-     ↓
-Verify When Necessary
-     ↓
-Determine Transaction State
-     ↓
-Record State
-     ↓
-Expose Reliable State
-```
-
-This allows the rest of the SolydFlow ecosystem to build on a consistent transaction foundation.
-
----
-
-## Truth Directory
-
-The Truth documentation is structured as:
-
-```text
-truth/
-├── overview.md                    ← You are here
-├── transaction-verification.md    ← NEXT
-├── consensus-engine.md
-├── transaction-ledger.md
-├── state-mismatches.md
-└── reconciliation.md
-```
-
-### Continue
-
-Start with transaction verification:
-
-[Transaction Verification →](./transaction-verification.md)
-
-Then continue through the Truth layer:
-
-[Consensus Engine →](./consensus-engine.md)
-
-[Transaction Ledger →](./transaction-ledger.md)
-
-[State Mismatches →](./state-mismatches.md)
-
-[Reconciliation →](./reconciliation.md)
-
-### Related documentation
-
-[Recovery Workflows →](../recover/recovery-workflows.md)
-
-[Transactions →](../concepts/transactions.md)
-
-[Transaction States →](../concepts/transaction-states.md)
-
-[Entitlements →](../concepts/entitlements.md)
+## Related Documentation
+
+* **[Transaction States & Lifecycle →](../concepts/transaction-states.md)**
+* **[Recovery Workflows →](../recover/recovery-workflows.md)**
+* **[Entitlements Architecture →](../concepts/entitlements.md)**
+* **[Webhook Security & Signatures →](../webhooks/signature-verification.md)**

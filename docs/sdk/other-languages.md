@@ -1,213 +1,117 @@
-# Other Languages
-
-SolydFlow's SDK integrations are being expanded to support more application platforms and programming languages.
-
-Currently documented integrations are:
-
-* JavaScript / TypeScript
-* Flutter
-
-React Native, Swift, and Kotlin integrations are **under development**.
-
-Additional language and platform integrations will be documented here as they become available.
-
+---
+id: other-languages
+title: Other Languages & Direct REST API
+sidebar_label: Other Languages / REST
 ---
 
-## SolydFlow Integration Model
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
 
-Regardless of the application platform, the integration follows the same SolydFlow model:
+# Other Languages & Direct REST API
 
-```text id="w9zq4v"
-Application
-    ↓
-SolydFlow Integration
-    ↓
-SolydFlow Platform
-    ↓
-Payment Providers
-    ↓
-Transaction Verification
-    ↓
-Entitlement
-    ↓
-Application Access
+If SolydFlow does not currently offer an official native SDK for your language (such as **Python, PHP/Laravel, Go, Java, Ruby, or C# / .NET**), you can integrate directly using our standard **REST API** and signed **Webhooks**.
+
+```text
+[1. Direct REST API Call] ➔ [2. Pass User ID & Package ID] ➔ [3. Receive Hosted Checkout URL] ➔ [4. Fulfill via Webhook]
 ```
 
-The application interacts with SolydFlow while SolydFlow provides the underlying revenue infrastructure.
+---
+
+## Complete SDK Status & Roadmap
+
+| Platform / Language | Package | Status | Documentation |
+| :--- | :--- | :--- | :--- |
+| **Flutter (Dart)** | `solydflow_flutter` | ✅ **Production Ready** | **[Flutter SDK →](./flutter.md)** |
+| **JavaScript / TypeScript** | `solydflow-js` | ✅ **Production Ready** | **[JavaScript SDK →](./javascript.md)** |
+| **React Native** | `@solydflow/react-native` | 🚧 *Private Preview* | **[React Native SDK →](./react-native.md)** |
+| **iOS (Swift)** | `SolydFlowSwift` | 🚧 *Private Beta* | **[Swift SDK →](./swift.md)** |
+| **Android (Kotlin)** | `com.solydflow.android` | 🚧 *Private Beta* | **[Kotlin SDK →](./kotlin.md)** |
+| **Python / Go / PHP / Other** | Direct REST API | ✅ **Production Ready** | Follow the REST guide below |
 
 ---
 
-## Core Concepts
+## Integrating via Direct REST API
 
-Applications integrating with SolydFlow work with the same core concepts:
+Any backend or client capable of sending HTTPS requests can initiate checkouts directly:
 
-### Users
+### 1. Initialize a Checkout Session (cURL Example)
 
-A user identifies the customer whose purchases and entitlements are being managed.
+Send an authenticated `POST` request to the SolydFlow API using your **Secret Key** (`sf_sk_live_...` or `sf_sk_test_...`):
 
-See:
+<Tabs>
+<TabItem value="curl" label="cURL" default>
 
-[Users →](../concepts/users.md)
+```bash
+curl -X POST https://api.solydflow.com/api/v1/checkouts \
+  -H "Authorization: Bearer sf_sk_live_1982736450192837465019283" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user_id": "usr_supabase_991823",
+    "package_id": "pro_monthly_ngn",
+    "customer_email": "customer@example.com",
+    "customer_phone": "+2348012345678",
+    "success_url": "https://yourapp.com/dashboard?success=true",
+    "cancel_url": "https://yourapp.com/pricing"
+  }'
+```
 
-### Products
+</TabItem>
+<TabItem value="python" label="Python (Requests)">
 
-Products define what is available for sale.
+```python
+import requests
 
-See:
+url = "https://api.solydflow.com/api/v1/checkouts"
+headers = {
+    "Authorization": "Bearer sf_sk_live_1982736450192837465019283",
+    "Content-Type": "application/json"
+}
+payload = {
+    "user_id": "usr_991823",
+    "package_id": "pro_monthly_ngn",
+    "customer_email": "customer@example.com",
+    "customer_phone": "+2348012345678",
+    "success_url": "https://yourapp.com/success",
+    "cancel_url": "https://yourapp.com/pricing"
+}
 
-[Products →](../concepts/products.md)
+response = requests.post(url, json=payload, headers=headers)
+checkout_url = response.json().get("checkout_url")
+# Redirect user to checkout_url
+```
 
-### Packages
+</TabItem>
+</Tabs>
 
-Packages represent the purchasable plans associated with products.
+### 2. Sample API Response
 
-See:
+```json
+{
+  "status": "success",
+  "checkout_url": "https://checkout.solydflow.com/pay/chk_01J8K9B2D7E4F1A0C5E8",
+  "transaction_id": "txn_01J8K9B2D7E4F1A0C5E8",
+  "currency": "NGN",
+  "amount_minor": 500000
+}
+```
 
-[Packages →](../concepts/packages.md)
-
-### Entitlements
-
-Entitlements represent the access granted to a customer after a successful purchase.
-
-See:
-
-[Entitlements →](../concepts/entitlements.md)
-
-### Transactions
-
-Transactions represent payment activity and its resulting state.
-
-See:
-
-[Transactions →](../concepts/transactions.md)
-
----
-
-## Building Without a Native SDK
-
-Where a native SDK is not yet available for your platform, you can integrate with SolydFlow through its platform APIs and webhooks where supported.
-
-This allows your application to communicate with SolydFlow without requiring a platform-specific SDK.
-
-The exact integration approach depends on the type of application and the SolydFlow functionality being used.
-
-See:
-
-[How SolydFlow Works →](../how-solydflow-works.md)
-
-[Webhooks →](../webhooks/overview.md)
-
----
-
-## Web Applications
-
-Web applications can use the JavaScript SDK.
-
-The JavaScript SDK is framework-agnostic and can be used with technologies such as:
-
-* React
-* Vue
-* Next.js
-* Vanilla JavaScript
-
-See:
-
-[JavaScript →](./javascript.md)
+Redirect your customer to the returned `checkout_url`. SolydFlow's **Smart Router** automatically presents the optimal payment rail (Paystack, Monnify, M-Pesa, or Stripe).
 
 ---
 
-## Mobile Applications
+## 2. Fulfilling Purchases on Your Backend
 
-For mobile applications, SolydFlow is expanding its native SDK coverage.
+When the customer completes payment, SolydFlow sends a signed webhook to your server (`subscription_started` or `subscription_renewed`):
 
-### Flutter
-
-The Flutter SDK is currently documented and available.
-
-See:
-
-[Flutter →](./flutter.md)
-
-### React Native
-
-The React Native SDK is currently **under development**.
-
-See:
-
-[React Native →](./react-native.md)
-
-### iOS / Swift
-
-The Swift SDK is currently **under development**.
-
-See:
-
-[Swift →](./swift.md)
-
-### Android / Kotlin
-
-The Kotlin SDK is currently **under development**.
-
-See:
-
-[Kotlin →](./kotlin.md)
-
----
-
-## Future SDK Support
-
-SolydFlow will continue expanding its SDK coverage as additional integrations are developed.
-
-When an SDK becomes available, this page will be updated with:
-
-* Installation instructions
-* Platform requirements
-* Initialization
-* User configuration
-* Package retrieval
-* Purchase flows
-* Entitlement checks
-* Customer state
-* Transaction recovery
-* Platform-specific configuration
-
-This keeps the SDK documentation aligned with the actual integrations available in SolydFlow.
-
----
-
-## Current SDK Status
-
-| Platform                | SDK                 | Status               |
-| ----------------------- | ------------------- | -------------------- |
-| JavaScript / TypeScript | `solydflow-js`      | Available            |
-| Flutter                 | `solydflow_flutter` | Available            |
-| React Native            | —                   | 🚧 Under Development |
-| Swift                   | —                   | 🚧 Under Development |
-| Kotlin                  | —                   | 🚧 Under Development |
-| Other platforms         | —                   | Future               |
-
-The table will be updated as new SDKs become available.
+* Verify the `X-SolydFlow-Signature` header using your secret (`whsec_...`).
+* Grant the user access in your database until `expires_at`.
+* See **[Webhook Signature Verification →](../webhooks/signature-verification.md)** for complete handlers in Node.js, Python, and Supabase.
 
 ---
 
 ## Related Documentation
 
-[SDK Overview →](./overview.md)
-
-[JavaScript →](./javascript.md)
-
-[Flutter →](./flutter.md)
-
-[React Native →](./react-native.md)
-
-[Swift →](./swift.md)
-
-[Kotlin →](./kotlin.md)
-
-[How SolydFlow Works →](../how-solydflow-works.md)
-
-[Webhooks →](../webhooks/overview.md)
-
-[Transactions →](../concepts/transactions.md)
-
-[Entitlements →](../concepts/entitlements.md)
+* **[SDK Overview →](./overview.md)**
+* **[JavaScript / TypeScript SDK →](./javascript.md)**
+* **[Flutter Mobile SDK →](./flutter.md)**
+* **[Webhook Signature Verification →](../webhooks/signature-verification.md)**

@@ -1,214 +1,88 @@
-# Sandbox
+---
+id: overview
+title: Sandbox & Simulator Overview
+sidebar_label: Overview
+---
 
-The Solyd Simulator lets you test a project's product revenue flow before exposing the flow to customers.
+# Sandbox & Simulator Overview
 
-The simulator is **project-specific** and is tied to the selected product and its configured revenue setup. It uses SolydFlow's existing routing engine, so the routing behavior tested in the simulator follows the same currency-to-provider routing configured for the project.
-
-The simulator supports both test and live execution modes:
-
-* **Test (Sandbox)** — uses the test environment and test payment credentials.
-* **Live (Real Money)** — runs the flow using the live environment and can process real transactions.
-
-## How the Simulator Works
-
-The simulator allows you to select the environment and simulate the customer's location before testing a purchase.
+The **Solyd Simulator** is an interactive testing suite built into the SolydFlow Console that allows you to simulate customer purchases, inspect Smart Routing decisions, and verify entitlement grants across different countries before writing application code.
 
 ```text
-Project
-   ↓
-Solyd Simulator
-   ↓
-Execution Mode
-   ↓
-Simulated Location
-   ↓
-Packages for the Region
-   ↓
-Simulate Checkout
-   ↓
-SolydFlow Routing
-   ↓
-Payment Provider Checkout
-   ↓
-Transaction Result
-   ↓
-User Test Environment
+[1. Select Simulated Location / Currency] ➔ [2. Inspect Smart Router Decision] ➔ [3. Execute Sandbox Payment] ➔ [4. Audit Ledger & Entitlement]
 ```
 
-The simulator does not select a provider independently. It uses the project's existing routing configuration to determine which provider handles the payment.
+Because the simulator uses your project's active routing configuration, it guarantees that test checkouts behave identically to real mobile and web transactions in production.
 
-## Execution Mode
+---
 
-The simulator provides two execution modes.
+## Sandbox (Test) vs. Live (Real Money) Modes
 
-### Test (Sandbox)
+The Solyd Simulator supports two operating modes:
 
-Test mode is intended for safely testing the revenue flow.
+| Mode | API Keys Used | Financial Effect | Primary Use Case |
+| :--- | :--- | :--- | :--- |
+| **Test (Sandbox)** | `sf_pk_test_...`<br/>`sk_test_...` | **Zero money moved.** Uses simulator cards, test USSD, and dummy STK pushes. | Feature development, CI/CD testing, and failure simulation. |
+| **Live (Real Money)** | `sf_pk_live_...`<br/>`sk_live_...` | **Real currency deducted.** Actual debits from live cards/bank accounts. | Final pre-launch smoke testing before public release. |
 
-Transactions are processed using the project's test environment and test provider configuration.
+:::warning{title="Live Mode Charges Real Money"}
+Only switch the simulator to **Live Mode** when you intentionally wish to process a real payment on your personal merchant account.
+:::
 
-Test transactions and their resulting data are available in the project's test environment.
+---
 
-### Live (Real Money)
+## Simulating Geo-IP Locations & Currencies
 
-Live mode runs the same revenue flow against the live environment.
-
-Because this mode can process real payments, use it only when you intentionally want to test the live revenue flow.
-
-## Simulated Location
-
-The simulator allows you to select a simulated Geo-IP/currency context.
-
-The available currency options depend on the project configuration. For example:
-
-* NGN
-* KES
-* USD
-* ZAR
-
-The selected location determines which packages are loaded and which routing path is used.
-
-For example:
+In the simulator, you can select any supported regional currency context:
 
 ```text
-NGN
- ↓
-NGN Packages
- ↓
-Checkout
- ↓
-NGN Routing
- ↓
-Configured Provider
+┌─────────────────────────────────────────────────────────────┐
+│ Solyd Simulator: Apex SaaS Production                       │
+├─────────────────────────────────────────────────────────────┤
+│ Execution Mode:     (●) Test (Sandbox)     ( ) Live         │
+│ Simulated Region:   [ 🇳🇬 Nigeria (NGN)                    ▼]│
+│ Available Packages: [ pro_monthly_ngn (₦5,000 / mo)       ▼]│
+│                                                             │
+│ [ Simulate Checkout ]                                       │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-## Package Selection
+When you change the region to **Kenya (KES)** or **Global (USD)**, the simulator instantly reloads the catalog packages, localized prices, and gateway routes configured for that market.
 
-After the simulated location is selected, the simulator loads the packages available for that region.
+---
 
-The customer-facing portion of the simulator displays the available packages, including:
+## Real-Time Routing Engine Log
 
-* Package name
-* Package ID
-* Price
-* Billing period
+When you click **Simulate Checkout**, the simulator displays a live execution trace showing exactly how SolydFlow routes the payment:
 
-Where applicable, you can switch between billing periods such as monthly and yearly.
-
-## Simulate Checkout
-
-Select **Simulate Checkout** on the package you want to test.
-
-SolydFlow then runs the checkout through the project's existing routing engine.
-
-The simulator does not directly choose a payment provider. The routing engine determines the provider according to the project's configured routing rules.
-
-The routing log records the routing activity.
-
-For example:
-
-```text
-INITIATED: Checkout requested for starter (NGN 300)
-ROUTER DECISION: Smart Routing selected [PAYSTACK]
-ACTION: Redirecting to https://checkout.paystack.com/...
+```text title="Simulator Routing Console Log"
+[10:14:02] INITIATED: Checkout requested for package: "pro_monthly_ngn"
+[10:14:02] GEO_IP_DETECTED: Region [NG], Currency [NGN]
+[10:14:03] VAULT_CHECK: Paystack test credentials verified (AES-256-GCM)
+[10:14:03] ROUTER DECISION: Smart Routing selected [PAYSTACK_CARD] (Priority 1)
+[10:14:04] ACTION: Dispatching test checkout session
+[10:14:05] CHECKOUT_URL: https://checkout.paystack.com/test_chk_991823746
+[10:14:20] INBOUND_WEBHOOK: charge.success received
+[10:14:21] CONSENSUS_ENGINE: Server-to-server verification confirmed (₦5,000.00)
+[10:14:22] LEDGER_COMMIT: State transitioned to SETTLED_CONSENSUS
+[10:14:22] ENFORCE: Entitlement "pro_access" granted to test user
 ```
 
-The simulator then redirects the customer to the selected provider's checkout.
+---
 
-## Payment Provider Checkout
+## Explore Sandbox Guides
 
-The provider's checkout handles the payment itself.
+| Guide | What You'll Test |
+| :--- | :--- |
+| **[Test Transactions](./test-transactions.md)** | Step-by-step test purchases using test cards and dummy mobile money. |
+| **[Simulate Failures](./simulate-failures.md)** | Simulating card declines, invalid OTPs, and gateway timeouts. |
+| **[Testing Recovery](./testing-recovery.md)** | Running the force-close test to verify orphaned transaction recovery. |
 
-In test mode, the provider's test checkout can expose its available test payment outcomes.
-
-For example, a Paystack test checkout can provide options such as:
-
-* Success
-* Bank Authentication
-* Declined
-
-The provider returns the resulting payment status to the SolydFlow flow.
-
-## Transaction Result
-
-After the provider checkout completes, the simulator processes the resulting transaction.
-
-The result is reflected in the project:
-
-1. The transaction is detected.
-2. The transaction state is updated.
-3. The customer's entitlement is updated where applicable.
-4. The resulting data appears in the project's test environment when running in Test mode.
-
-This allows you to verify not only the checkout experience but the complete revenue flow.
-
-## Routing Engine Log
-
-The simulator provides a routing engine log that records important activity during the flow.
-
-The log can show:
-
-* Environment initialization
-* Selected project
-* Simulated Geo-IP/currency
-* Packages loaded
-* Checkout initiation
-* Routing decision
-* Selected provider
-* Checkout redirect
-
-The log provides visibility into how SolydFlow arrived at the provider used for the transaction.
-
-## Test Environment Data
-
-Transactions completed through the simulator in Test mode appear in the project's test environment.
-
-This allows you to continue testing the transaction after checkout and verify the resulting application state.
-
-The simulator therefore provides a complete path from:
-
-```text
-Revenue Configuration
-        ↓
-Routing
-        ↓
-Checkout
-        ↓
-Payment
-        ↓
-Transaction
-        ↓
-Entitlement
-        ↓
-Test Environment
-```
-
-## Live Testing
-
-The same simulator can be switched to **Live (Real Money)** mode.
-
-Live mode uses the live configuration and can process real payments through the project's configured routing.
-
-Because live transactions involve real money, verify the selected project, package, price, currency, and routing configuration before initiating a live checkout.
+---
 
 ## Related Documentation
 
-[Test Transactions →](./test-transactions.md)
-
-[Simulate Failures →](./simulate-failures.md)
-
-[Testing Recovery →](./testing-recovery.md)
-
-[Projects →](../concepts/projects.md)
-
-[Packages →](../concepts/packages.md)
-
-[Pricing →](../concepts/pricing.md)
-
-[Transactions →](../concepts/transactions.md)
-
-[Transaction States →](../concepts/transaction-states.md)
-
-[Payment Providers →](../payment-providers/overview.md)
-
-[Smart Routing →](../enforce/smart-routing.md)
+* **[Quickstart Guide →](../get-started/quickstart.md)**
+* **[Smart Payment Routing →](../enforce/smart-routing.md)**
+* **[Truth & Consensus Engine →](../truth/consensus-engine.md)**
+* **[The Immutable Transaction Ledger →](../truth/transaction-ledger.md)**
